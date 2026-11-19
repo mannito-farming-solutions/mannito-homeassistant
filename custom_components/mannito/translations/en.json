@@ -1,0 +1,339 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect a Mannito board",
+        "description": "Create an API token on the page of your board in the Mannito cloud (card \"API-Zugänge\"). A token belongs to exactly one board.",
+        "data": {
+          "url": "Cloud address",
+          "api_token": "API token"
+        },
+        "data_description": {
+          "url": "Address of the Mannito cloud. Keep the suggested address unless you run a cloud of your own.",
+          "api_token": "The token starting with mnt_. Its rights (read, control, configure) decide which entities appear."
+        }
+      },
+      "reauth_confirm": {
+        "title": "New API token for {name}",
+        "description": "The token of {name} no longer works (revoked or expired). Create a new token for this board in the Mannito cloud.",
+        "data": {
+          "api_token": "API token"
+        },
+        "data_description": {
+          "api_token": "The token starting with mnt_. Its rights (read, control, configure) decide which entities appear."
+        }
+      },
+      "reconfigure": {
+        "title": "Change cloud address or token",
+        "description": "The token must belong to the same board.",
+        "data": {
+          "url": "Cloud address",
+          "api_token": "API token"
+        },
+        "data_description": {
+          "url": "Address of the Mannito cloud. Keep the suggested address unless you run a cloud of your own.",
+          "api_token": "The token starting with mnt_. Its rights (read, control, configure) decide which entities appear."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "The Mannito cloud could not be reached.",
+      "invalid_auth": "The token is unknown, revoked or expired.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This board is already set up.",
+      "reauth_successful": "The new token works.",
+      "reconfigure_successful": "The settings were changed.",
+      "wrong_board": "The token belongs to another board."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "day": {
+        "name": "Day"
+      },
+      "emergency": {
+        "name": "Emergency mode"
+      },
+      "watering": {
+        "name": "Watering"
+      },
+      "output_on": {
+        "name": "{name}"
+      },
+      "manual_override": {
+        "name": "{name} manual operation"
+      }
+    },
+    "button": {
+      "automatic": {
+        "name": "{name} automatic"
+      }
+    },
+    "number": {
+      "p1_start": {
+        "name": "P1 start after lights on"
+      },
+      "p1_shot": {
+        "name": "P1 shot per pot"
+      },
+      "p1_interval": {
+        "name": "P1 interval"
+      },
+      "p1_max_shots": {
+        "name": "P1 maximum shots"
+      },
+      "p1_target": {
+        "name": "P1 target moisture"
+      },
+      "p2_shot": {
+        "name": "P2 shot per pot"
+      },
+      "p2_dryback": {
+        "name": "P2 trigger below peak"
+      },
+      "p2_min_interval": {
+        "name": "P2 minimum interval"
+      },
+      "p2_end": {
+        "name": "P2 end before lights off"
+      },
+      "min_vwc": {
+        "name": "Emergency moisture"
+      },
+      "fallback_interval": {
+        "name": "Interval without probe"
+      },
+      "max_day_shots": {
+        "name": "Shots per day at most"
+      },
+      "max_day_ml": {
+        "name": "Water per pot and day at most"
+      }
+    },
+    "select": {
+      "climate_control": {
+        "name": "Climate control",
+        "state": {
+          "fuzzy": "Fuzzy",
+          "pi": "Fuzzy + PI",
+          "mpc": "MPC"
+        }
+      },
+      "irrigation_mode": {
+        "name": "Irrigation",
+        "state": {
+          "off": "Off",
+          "schedule": "Schedule",
+          "dryback": "Dryback"
+        }
+      },
+      "dryback_strategy": {
+        "name": "Dryback strategy",
+        "state": {
+          "auto": "Automatic (by grow phase)",
+          "vegetative": "Vegetative",
+          "generative": "Generative",
+          "custom": "Custom"
+        }
+      }
+    },
+    "sensor": {
+      "vpd": {
+        "name": "VPD"
+      },
+      "leaf_temperature": {
+        "name": "Leaf temperature"
+      },
+      "intake_temperature": {
+        "name": "Intake air temperature"
+      },
+      "intake_humidity": {
+        "name": "Intake air humidity"
+      },
+      "target_temperature": {
+        "name": "Target temperature"
+      },
+      "target_humidity": {
+        "name": "Target humidity"
+      },
+      "target_vpd": {
+        "name": "Target VPD"
+      },
+      "target_co2": {
+        "name": "Target CO₂"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "neutral": "Paused",
+          "ok": "OK",
+          "attention": "Attention",
+          "problem": "Problem",
+          "nodata": "No current data"
+        }
+      },
+      "headline": {
+        "name": "Summary"
+      },
+      "grow_phase": {
+        "name": "Grow phase"
+      },
+      "day_of_grow": {
+        "name": "Day of grow",
+        "unit_of_measurement": "days"
+      },
+      "day_of_phase": {
+        "name": "Day of phase",
+        "unit_of_measurement": "days"
+      },
+      "irrigation_phase": {
+        "name": "Irrigation phase"
+      },
+      "substrate_moisture": {
+        "name": "Substrate moisture"
+      },
+      "substrate_peak": {
+        "name": "Substrate moisture peak"
+      },
+      "dryback": {
+        "name": "Dryback"
+      },
+      "shots_today": {
+        "name": "Shots today",
+        "unit_of_measurement": "shots"
+      },
+      "water_today": {
+        "name": "Water per pot today"
+      },
+      "last_shot": {
+        "name": "Last shot"
+      },
+      "next_shot": {
+        "name": "Next shot in"
+      },
+      "field_capacity": {
+        "name": "Field capacity"
+      },
+      "tank_volume": {
+        "name": "Tank volume"
+      },
+      "tank_level": {
+        "name": "Tank level"
+      },
+      "last_seen": {
+        "name": "Last contact"
+      },
+      "sync_pending": {
+        "name": "Pending changes"
+      }
+    },
+    "switch": {
+      "control": {
+        "name": "Control"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_auth": {
+      "message": "The API token no longer works."
+    },
+    "update_failed": {
+      "message": "The Mannito cloud could not be read: {error}"
+    },
+    "missing_right": {
+      "message": "The API token lacks the right for this. Create a token with the right to control or configure."
+    },
+    "command_failed": {
+      "message": "The Mannito cloud refused: {error}"
+    },
+    "not_an_area": {
+      "message": "Choose a grow area of a Mannito board."
+    },
+    "not_loaded": {
+      "message": "The board {name} is not loaded."
+    },
+    "days_required": {
+      "message": "Postponing needs the number of days."
+    },
+    "lights_on_required": {
+      "message": "Setting the lights-on time needs a time."
+    },
+    "use_co2_required": {
+      "message": "Choose whether CO₂ is dosed."
+    }
+  },
+  "selector": {
+    "grow_cycle_action": {
+      "options": {
+        "confirm_phase": "Confirm phase (harvest or drying done)",
+        "next_phase_now": "Start next phase now",
+        "postpone": "Postpone next phase",
+        "set_lights_on": "Set lights-on time",
+        "set_co2": "Dose CO₂ or not"
+      }
+    }
+  },
+  "services": {
+    "open_valve": {
+      "name": "Open valve",
+      "description": "Opens a valve for a few seconds; it closes on its own. At most 60 seconds.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "Seconds the valve stays open (1-60)."
+        }
+      }
+    },
+    "run_valves": {
+      "name": "Run valves of a grow area",
+      "description": "Opens the valves of a grow area one after another, the pump runs its lead time first. Either seconds (flow measurement) or ml per pot (test shot); each valve at most 60 seconds.",
+      "fields": {
+        "area": {
+          "name": "Grow area",
+          "description": "The grow area (device) whose valves open."
+        },
+        "seconds": {
+          "name": "Seconds",
+          "description": "Each valve stays open this long (1-60)."
+        },
+        "ml_per_pot": {
+          "name": "ml per pot",
+          "description": "Test shot: water per pot (1-1000)."
+        }
+      }
+    },
+    "grow_cycle_action": {
+      "name": "Grow cycle action",
+      "description": "Steers the running grow cycle of a grow area.",
+      "fields": {
+        "area": {
+          "name": "Grow area",
+          "description": "The grow area (device) whose valves open."
+        },
+        "action": {
+          "name": "Action",
+          "description": "What to do."
+        },
+        "days": {
+          "name": "Days",
+          "description": "Postpone: days (1-14)."
+        },
+        "lights_on": {
+          "name": "Lights on",
+          "description": "New lights-on time."
+        },
+        "use_co2": {
+          "name": "Dose CO₂",
+          "description": "Whether CO₂ is dosed."
+        }
+      }
+    }
+  }
+}

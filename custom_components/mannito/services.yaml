@@ -1,0 +1,70 @@
+open_valve:
+  target:
+    entity:
+      integration: mannito
+      domain: valve
+  fields:
+    duration:
+      required: true
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: s
+          mode: slider
+
+run_valves:
+  fields:
+    area:
+      required: true
+      selector:
+        device:
+          filter:
+            integration: mannito
+    seconds:
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: s
+          mode: box
+    ml_per_pot:
+      selector:
+        number:
+          min: 1
+          max: 1000
+          unit_of_measurement: ml
+          mode: box
+
+grow_cycle_action:
+  fields:
+    area:
+      required: true
+      selector:
+        device:
+          filter:
+            integration: mannito
+    action:
+      required: true
+      selector:
+        select:
+          translation_key: grow_cycle_action
+          options:
+            - confirm_phase
+            - next_phase_now
+            - postpone
+            - set_lights_on
+            - set_co2
+    days:
+      selector:
+        number:
+          min: 1
+          max: 14
+          mode: box
+    lights_on:
+      selector:
+        time:
+    use_co2:
+      selector:
+        boolean:

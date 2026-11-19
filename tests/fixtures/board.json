@@ -1,0 +1,218 @@
+{
+  "board": {
+    "id": "c0ddf638-1007-4162-a038-e7753a4b75c1",
+    "name": "Zelt",
+    "online": true,
+    "firmware": "2.14.2",
+    "lastSeenUtc": "2026-11-19T08:40:12Z",
+    "sync": "synchronized",
+    "syncPending": 0,
+    "syncProblems": 0
+  },
+  "access": {
+    "tokenId": "6b0c1a52-2f4e-4c55-9d43-2f5a1e0b7a11",
+    "tokenName": "Home Assistant",
+    "canControl": true,
+    "canConfigure": true,
+    "expiresAtUtc": null
+  },
+  "firmware": {
+    "installed": "2.14.2",
+    "channel": "production",
+    "available": "2.14.3",
+    "updateAvailable": true,
+    "updateRunning": false
+  },
+  "devices": [
+    {
+      "id": "11111111-0000-4000-8000-000000000001",
+      "name": "Abluft",
+      "identifier": "0_FAN8",
+      "type": "fan",
+      "kind": "Lüfter",
+      "on": true,
+      "powerPercent": 45,
+      "dimmable": true,
+      "manualOverride": false,
+      "hidden": false,
+      "maxOnSeconds": null
+    },
+    {
+      "id": "11111111-0000-4000-8000-000000000002",
+      "name": "Lampe",
+      "identifier": "0_LIGHT1",
+      "type": "light",
+      "kind": "Lampe",
+      "on": true,
+      "powerPercent": 100,
+      "dimmable": true,
+      "manualOverride": false,
+      "hidden": false,
+      "maxOnSeconds": null
+    },
+    {
+      "id": "11111111-0000-4000-8000-000000000003",
+      "name": "Ventil rechts",
+      "identifier": "0_SOLENOID3",
+      "type": "valve",
+      "kind": "Magnetventil",
+      "on": false,
+      "powerPercent": null,
+      "dimmable": false,
+      "manualOverride": false,
+      "hidden": false,
+      "maxOnSeconds": 60
+    },
+    {
+      "id": "11111111-0000-4000-8000-000000000004",
+      "name": "Befeuchter",
+      "identifier": "0_RELAY2",
+      "type": "socket",
+      "kind": "Steckdose",
+      "on": false,
+      "powerPercent": null,
+      "dimmable": false,
+      "manualOverride": true,
+      "hidden": false,
+      "maxOnSeconds": null
+    }
+  ],
+  "sensors": [
+    {
+      "id": "22222222-0000-4000-8000-000000000001",
+      "name": "Temperatur Zelt",
+      "identifier": "150_TEMPERATURE1",
+      "type": "AIR_TEMPERATURE",
+      "unit": "°C",
+      "value": 24.6,
+      "valueAtUtc": "2026-11-19T08:40:00Z",
+      "hidden": false
+    },
+    {
+      "id": "22222222-0000-4000-8000-000000000002",
+      "name": "Substrat Topf 3",
+      "identifier": "1_SUBSTRATE_MOISTURE1",
+      "type": "SOIL_MOISTURE",
+      "unit": "%",
+      "value": 41.9,
+      "valueAtUtc": "2026-11-19T08:40:00Z",
+      "hidden": false
+    }
+  ],
+  "busDevices": [
+    {
+      "address": 150,
+      "definition": "MANNITO_VPD",
+      "uniqueId": "5C013B543614",
+      "firmware": "1.1.2",
+      "online": true,
+      "updatable": true,
+      "availableFirmware": null,
+      "lastUpdate": null,
+      "name": "Mannito VPD-Modul",
+      "sensors": ["150_TEMPERATURE1"],
+      "state": "OK",
+      "seenUniqueId": null,
+      "errors": null
+    }
+  ],
+  "areas": [
+    {
+      "id": "dd3884a0-83f0-4e98-8437-20744b70f645",
+      "name": "Green Poison",
+      "place": 1,
+      "enabled": true,
+      "fresh": true,
+      "dataAtUtc": "2026-11-19T08:40:00Z",
+      "status": "ok",
+      "headline": "Alles im Soll.",
+      "emergency": null,
+      "climateControl": "PI",
+      "activeControl": "PI",
+      "climate": {
+        "temperatureC": 24.6,
+        "humidityPct": 58.2,
+        "vpdKpa": 1.21,
+        "co2Ppm": null,
+        "leafTemperatureC": 23.1,
+        "intakeTemperatureC": 20.5,
+        "intakeHumidityPct": 63.8,
+        "targetTemperatureC": 25.0,
+        "targetHumidityPct": 60.0,
+        "targetVpdKpa": 1.15,
+        "targetCo2Ppm": null
+      },
+      "light": {
+        "isDay": true,
+        "on": true,
+        "headline": "Tag – Licht 100 %",
+        "nextChange": "Licht aus um 20:45 Uhr",
+        "lightsOn": "09:00",
+        "lightsOff": "20:45"
+      },
+      "phase": {
+        "cycleId": "33333333-0000-4000-8000-000000000001",
+        "name": "Blüte Woche 1–3",
+        "kind": "FlowerEarly",
+        "dayOfGrow": 22,
+        "dayOfPhase": 5,
+        "plannedDays": 21,
+        "progress": "Tag 22 · Blütewoche 1",
+        "next": "Blüte Woche 4–6 am 05.12.",
+        "confirmRequired": false,
+        "canPostpone": true
+      },
+      "irrigation": {
+        "mode": "Dryback",
+        "strategy": "Custom",
+        "effectiveStrategy": "Custom",
+        "effective": {
+          "p1StartMin": 120,
+          "p1ShotMl": 220,
+          "p1IntervalMin": 25,
+          "p1MaxShots": 8,
+          "p1TargetVwc": 44.3,
+          "p2ShotMl": 110,
+          "p2DrybackPct": 8.9,
+          "p2MinIntervalMin": 45,
+          "p2EndMin": 180,
+          "minVwc": 28.0,
+          "fallbackIntervalMin": 180
+        },
+        "maxDayShots": 12,
+        "maxDayMl": 1500,
+        "fieldCapacityPct": 44.6,
+        "valves": 2,
+        "live": {
+          "mode": "DRYBACK",
+          "phase": "P1",
+          "phaseText": "P1 – Rampe",
+          "vwcPct": 41.9,
+          "peakVwcPct": 42.0,
+          "drybackPct": 0.1,
+          "p1Shots": 3,
+          "shotsToday": 3,
+          "mlToday": 660,
+          "watering": false,
+          "outlets": 2,
+          "lastShotLocal": "2026-11-19T11:50:00",
+          "lastShotMl": 220,
+          "lastReasonText": "P1",
+          "nextShotMin": 22,
+          "hold": null,
+          "holdText": null,
+          "fresh": true
+        },
+        "problems": []
+      },
+      "tank": {
+        "id": "01085855-eea0-4f26-a791-ae7bbd75c772",
+        "name": "Tank Zelt",
+        "liters": 8.2,
+        "capacityLiters": 10.0,
+        "percent": 82
+      },
+      "warnings": []
+    }
+  ]
+}

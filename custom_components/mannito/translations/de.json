@@ -1,0 +1,339 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Mannito-Platine verbinden",
+        "description": "Erstelle auf der Seite deiner Platine in der Mannito-Cloud einen API-Token (Karte „API-Zugänge“). Ein Token gilt für genau eine Platine.",
+        "data": {
+          "url": "Cloud-Adresse",
+          "api_token": "API-Token"
+        },
+        "data_description": {
+          "url": "Adresse der Mannito-Cloud. Die vorgeschlagene Adresse passt, außer du betreibst eine eigene Cloud.",
+          "api_token": "Der Token, der mit mnt_ beginnt. Seine Rechte (Lesen, Steuern, Konfigurieren) bestimmen, welche Entitäten erscheinen."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Neuer API-Token für {name}",
+        "description": "Der Token von {name} funktioniert nicht mehr (widerrufen oder abgelaufen). Erstelle in der Mannito-Cloud einen neuen Token für diese Platine.",
+        "data": {
+          "api_token": "API-Token"
+        },
+        "data_description": {
+          "api_token": "Der Token, der mit mnt_ beginnt. Seine Rechte (Lesen, Steuern, Konfigurieren) bestimmen, welche Entitäten erscheinen."
+        }
+      },
+      "reconfigure": {
+        "title": "Cloud-Adresse oder Token ändern",
+        "description": "Der Token muss zur selben Platine gehören.",
+        "data": {
+          "url": "Cloud-Adresse",
+          "api_token": "API-Token"
+        },
+        "data_description": {
+          "url": "Adresse der Mannito-Cloud. Die vorgeschlagene Adresse passt, außer du betreibst eine eigene Cloud.",
+          "api_token": "Der Token, der mit mnt_ beginnt. Seine Rechte (Lesen, Steuern, Konfigurieren) bestimmen, welche Entitäten erscheinen."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Die Mannito-Cloud ist nicht erreichbar.",
+      "invalid_auth": "Der Token ist unbekannt, widerrufen oder abgelaufen.",
+      "unknown": "Unerwarteter Fehler."
+    },
+    "abort": {
+      "already_configured": "Diese Platine ist schon eingerichtet.",
+      "reauth_successful": "Der neue Token funktioniert.",
+      "reconfigure_successful": "Die Einstellungen wurden geändert.",
+      "wrong_board": "Der Token gehört zu einer anderen Platine."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "day": {
+        "name": "Tag"
+      },
+      "emergency": {
+        "name": "Notbetrieb"
+      },
+      "watering": {
+        "name": "Bewässerung läuft"
+      },
+      "output_on": {
+        "name": "{name}"
+      },
+      "manual_override": {
+        "name": "{name} Handbetrieb"
+      }
+    },
+    "button": {
+      "automatic": {
+        "name": "{name} Automatik"
+      }
+    },
+    "number": {
+      "p1_start": {
+        "name": "P1-Start nach Licht an"
+      },
+      "p1_shot": {
+        "name": "P1-Shot pro Topf"
+      },
+      "p1_interval": {
+        "name": "P1-Abstand"
+      },
+      "p1_max_shots": {
+        "name": "P1 höchstens Shots"
+      },
+      "p1_target": {
+        "name": "P1-Zielfeuchte"
+      },
+      "p2_shot": {
+        "name": "P2-Shot pro Topf"
+      },
+      "p2_dryback": {
+        "name": "P2-Auslöser unter Tageshoch"
+      },
+      "p2_min_interval": {
+        "name": "P2-Mindestabstand"
+      },
+      "p2_end": {
+        "name": "P2-Ende vor Licht aus"
+      },
+      "min_vwc": {
+        "name": "Notfall-Feuchte"
+      },
+      "fallback_interval": {
+        "name": "Abstand ohne Sonde"
+      },
+      "max_day_shots": {
+        "name": "Shots pro Tag höchstens"
+      },
+      "max_day_ml": {
+        "name": "Wasser pro Topf und Tag höchstens"
+      }
+    },
+    "select": {
+      "climate_control": {
+        "name": "Klimaregelung",
+        "state": {
+          "fuzzy": "Fuzzy",
+          "pi": "Fuzzy + PI",
+          "mpc": "MPC"
+        }
+      },
+      "irrigation_mode": {
+        "name": "Bewässerung",
+        "state": {
+          "off": "Aus",
+          "schedule": "Zeitplan",
+          "dryback": "Dryback"
+        }
+      },
+      "dryback_strategy": {
+        "name": "Dryback-Steuerung",
+        "state": {
+          "auto": "Automatisch (nach Phase)",
+          "vegetative": "Vegetativ",
+          "generative": "Generativ",
+          "custom": "Eigene Werte"
+        }
+      }
+    },
+    "sensor": {
+      "vpd": {
+        "name": "VPD"
+      },
+      "leaf_temperature": {
+        "name": "Blatttemperatur"
+      },
+      "intake_temperature": {
+        "name": "Zuluft-Temperatur"
+      },
+      "intake_humidity": {
+        "name": "Zuluft-Feuchte"
+      },
+      "target_temperature": {
+        "name": "Soll-Temperatur"
+      },
+      "target_humidity": {
+        "name": "Soll-Feuchte"
+      },
+      "target_vpd": {
+        "name": "Soll-VPD"
+      },
+      "target_co2": {
+        "name": "Soll-CO₂"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "neutral": "Pausiert",
+          "ok": "In Ordnung",
+          "attention": "Achtung",
+          "problem": "Problem",
+          "nodata": "Keine aktuellen Werte"
+        }
+      },
+      "headline": {
+        "name": "Zusammenfassung"
+      },
+      "grow_phase": {
+        "name": "Wachstumsphase"
+      },
+      "day_of_grow": {
+        "name": "Tag des Grows",
+        "unit_of_measurement": "Tage"
+      },
+      "day_of_phase": {
+        "name": "Tag der Phase",
+        "unit_of_measurement": "Tage"
+      },
+      "irrigation_phase": {
+        "name": "Bewässerungsphase"
+      },
+      "substrate_moisture": {
+        "name": "Substratfeuchte"
+      },
+      "substrate_peak": {
+        "name": "Substratfeuchte Tageshoch"
+      },
+      "dryback": {
+        "name": "Dryback"
+      },
+      "shots_today": {
+        "name": "Shots heute",
+        "unit_of_measurement": "Shots"
+      },
+      "water_today": {
+        "name": "Wasser pro Topf heute"
+      },
+      "last_shot": {
+        "name": "Letzter Shot"
+      },
+      "next_shot": {
+        "name": "Nächster Shot in"
+      },
+      "field_capacity": {
+        "name": "Feldkapazität"
+      },
+      "tank_volume": {
+        "name": "Tankinhalt"
+      },
+      "tank_level": {
+        "name": "Tankfüllstand"
+      },
+      "last_seen": {
+        "name": "Letzter Kontakt"
+      },
+      "sync_pending": {
+        "name": "Offene Änderungen"
+      }
+    },
+    "switch": {
+      "control": {
+        "name": "Regelung"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_auth": {
+      "message": "Der API-Token funktioniert nicht mehr."
+    },
+    "update_failed": {
+      "message": "Die Mannito-Cloud konnte nicht gelesen werden: {error}"
+    },
+    "missing_right": {
+      "message": "Dem API-Token fehlt das Recht dafür. Erstelle einen Token mit dem Recht Steuern oder Konfigurieren."
+    },
+    "command_failed": {
+      "message": "Die Mannito-Cloud hat abgelehnt: {error}"
+    },
+    "not_an_area": {
+      "message": "Wähle einen Grow-Bereich einer Mannito-Platine."
+    },
+    "not_loaded": {
+      "message": "Die Platine {name} ist nicht geladen."
+    },
+    "days_required": {
+      "message": "Zum Verschieben fehlt die Anzahl der Tage."
+    },
+    "lights_on_required": {
+      "message": "Für die Licht-an-Zeit fehlt die Uhrzeit."
+    },
+    "use_co2_required": {
+      "message": "Wähle, ob CO₂ dosiert wird."
+    }
+  },
+  "selector": {
+    "grow_cycle_action": {
+      "options": {
+        "confirm_phase": "Phase bestätigen (Ernte oder Trocknung fertig)",
+        "next_phase_now": "Nächste Phase jetzt starten",
+        "postpone": "Nächste Phase verschieben",
+        "set_lights_on": "Licht-an-Zeit setzen",
+        "set_co2": "CO₂ dosieren oder nicht"
+      }
+    }
+  },
+  "services": {
+    "open_valve": {
+      "name": "Ventil öffnen",
+      "description": "Öffnet ein Ventil für einige Sekunden, danach schließt es von selbst. Höchstens 60 Sekunden.",
+      "fields": {
+        "duration": {
+          "name": "Dauer",
+          "description": "Sekunden, die das Ventil offen bleibt (1-60)."
+        }
+      }
+    },
+    "run_valves": {
+      "name": "Ventile eines Grow-Bereichs öffnen",
+      "description": "Öffnet die Ventile eines Grow-Bereichs nacheinander, die Pumpe läuft vorher ihre Vorlaufzeit. Entweder Sekunden (Durchfluss messen) oder ml pro Topf (Test-Shot); jedes Ventil höchstens 60 Sekunden.",
+      "fields": {
+        "area": {
+          "name": "Grow-Bereich",
+          "description": "Der Grow-Bereich (Gerät), dessen Ventile öffnen."
+        },
+        "seconds": {
+          "name": "Sekunden",
+          "description": "So lange bleibt jedes Ventil offen (1-60)."
+        },
+        "ml_per_pot": {
+          "name": "ml pro Topf",
+          "description": "Test-Shot: Wasser pro Topf (1-1000)."
+        }
+      }
+    },
+    "grow_cycle_action": {
+      "name": "Grow-Zyklus steuern",
+      "description": "Steuert den laufenden Grow-Zyklus eines Grow-Bereichs.",
+      "fields": {
+        "area": {
+          "name": "Grow-Bereich",
+          "description": "Der Grow-Bereich (Gerät), dessen Ventile öffnen."
+        },
+        "action": {
+          "name": "Aktion",
+          "description": "Was passieren soll."
+        },
+        "days": {
+          "name": "Tage",
+          "description": "Verschieben: Tage (1-14)."
+        },
+        "lights_on": {
+          "name": "Licht an",
+          "description": "Neue Licht-an-Zeit."
+        },
+        "use_co2": {
+          "name": "CO₂ dosieren",
+          "description": "Ob CO₂ dosiert wird."
+        }
+      }
+    }
+  }
+}

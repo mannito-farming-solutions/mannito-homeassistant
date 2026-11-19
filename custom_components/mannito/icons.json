@@ -1,0 +1,67 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "day": { "default": "mdi:weather-night", "state": { "on": "mdi:white-balance-sunny" } },
+      "emergency": { "default": "mdi:alert-octagon-outline" },
+      "watering": { "default": "mdi:water-off", "state": { "on": "mdi:water" } },
+      "manual_override": { "default": "mdi:robot", "state": { "on": "mdi:hand-back-right" } }
+    },
+    "button": {
+      "automatic": { "default": "mdi:robot" }
+    },
+    "number": {
+      "p1_start": { "default": "mdi:timer-play-outline" },
+      "p1_shot": { "default": "mdi:water-plus-outline" },
+      "p1_interval": { "default": "mdi:timer-sync-outline" },
+      "p1_max_shots": { "default": "mdi:counter" },
+      "p1_target": { "default": "mdi:water-percent" },
+      "p2_shot": { "default": "mdi:water-plus-outline" },
+      "p2_dryback": { "default": "mdi:arrow-down-bold-outline" },
+      "p2_min_interval": { "default": "mdi:timer-sync-outline" },
+      "p2_end": { "default": "mdi:timer-stop-outline" },
+      "min_vwc": { "default": "mdi:water-alert-outline" },
+      "fallback_interval": { "default": "mdi:timer-alert-outline" },
+      "max_day_shots": { "default": "mdi:counter" },
+      "max_day_ml": { "default": "mdi:cup-water" }
+    },
+    "select": {
+      "climate_control": { "default": "mdi:tune-variant" },
+      "irrigation_mode": { "default": "mdi:sprinkler-variant" },
+      "dryback_strategy": { "default": "mdi:chart-bell-curve" }
+    },
+    "sensor": {
+      "vpd": { "default": "mdi:leaf" },
+      "target_vpd": { "default": "mdi:leaf" },
+      "status": {
+        "default": "mdi:check-circle-outline",
+        "state": {
+          "neutral": "mdi:pause-circle-outline",
+          "attention": "mdi:alert-outline",
+          "problem": "mdi:alert-octagon-outline",
+          "nodata": "mdi:help-circle-outline"
+        }
+      },
+      "headline": { "default": "mdi:text-short" },
+      "grow_phase": { "default": "mdi:sprout" },
+      "day_of_grow": { "default": "mdi:calendar-today" },
+      "day_of_phase": { "default": "mdi:calendar-range" },
+      "irrigation_phase": { "default": "mdi:sprinkler" },
+      "dryback": { "default": "mdi:arrow-down-bold-outline" },
+      "shots_today": { "default": "mdi:counter" },
+      "water_today": { "default": "mdi:cup-water" },
+      "last_shot": { "default": "mdi:history" },
+      "next_shot": { "default": "mdi:timer-sand" },
+      "tank_volume": { "default": "mdi:storage-tank" },
+      "tank_level": { "default": "mdi:storage-tank-outline" },
+      "sync_pending": { "default": "mdi:sync" }
+    },
+    "switch": {
+      "control": { "default": "mdi:power-plug-off", "state": { "on": "mdi:power-plug" } }
+    }
+  },
+  "services": {
+    "open_valve": { "service": "mdi:valve-open" },
+    "run_valves": { "service": "mdi:sprinkler-variant" },
+    "grow_cycle_action": { "service": "mdi:sprout" }
+  }
+}
