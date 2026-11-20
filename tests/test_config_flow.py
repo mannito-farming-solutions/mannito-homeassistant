@@ -113,6 +113,7 @@ async def test_reconfigure(
     mock_config_entry.add_to_hass(hass)
     other = "https://cloud.example"
     aioclient_mock.get(f"{other}/api/v1/board", json=board)
+    aioclient_mock.delete(f"{API}/token", status=204)
     result = await mock_config_entry.start_reconfigure_flow(hass)
     assert result["step_id"] == "reconfigure"
 

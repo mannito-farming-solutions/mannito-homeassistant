@@ -9,21 +9,24 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
 from .api import MannitoClient
-from .const import DOMAIN, MANUFACTURER
+from .const import DOMAIN, LOGGER, MANUFACTURER
 from .coordinator import MannitoConfigEntry, MannitoCoordinator, board_identifier, current_identifiers
-from .frontend import async_register_card
+from .entity import async_remove_entities_not_provided
+from .frontend import async_hide_card, async_register_card, async_show_card
 from .services import async_setup_services
 from .websocket import async_setup_websocket
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
+    Platform.CALENDAR,
     Platform.FAN,
     Platform.LIGHT,
     Platform.NUMBER,
     Platform.SELECT,
     Platform.SENSOR,
     Platform.SWITCH,
+    Platform.TIME,
     Platform.UPDATE,
     Platform.VALVE,
 ]
@@ -58,12 +61,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: MannitoConfigEntry) -> b
     coordinator.board_device_id = device.id
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    async_remove_entities_not_provided(coordinator)
+    async_show_card(hass)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: MannitoConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: MannitoConfigEntry) -> None:
+    """The board was deleted in Home Assistant: revoke its token in the cloud, stop loading the card after the last board."""
+    client = MannitoClient(async_get_clientsession(hass), entry.data[CONF_URL], entry.data[CONF_API_TOKEN])
+    if not await client.async_revoke_token():
+        LOGGER.warning(
+            "The API token of %s could not be revoked, the Mannito cloud was not reachable; revoke it there under API access",
+            entry.title,
+        )
+    if not any(other.entry_id != entry.entry_id for other in hass.config_entries.async_entries(DOMAIN)):
+        async_hide_card(hass)
 
 
 async def async_remove_config_entry_device(

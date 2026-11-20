@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import MannitoConfigEntry, MannitoCoordinator
-from .entity import BoardEntity
+from .entity import BoardEntity, add_entities
 
 PARALLEL_UPDATES = 1
 
@@ -20,7 +20,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the firmware update."""
-    async_add_entities([FirmwareUpdate(entry.runtime_data)])
+    add_entities(entry.runtime_data, async_add_entities, [FirmwareUpdate(entry.runtime_data)])
 
 
 class FirmwareUpdate(BoardEntity, UpdateEntity):

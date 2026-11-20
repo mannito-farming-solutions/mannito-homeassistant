@@ -40,6 +40,15 @@ class MannitoForbiddenError(MannitoError):
     """The token lacks the right for this request (HTTP 403)."""
 
 
+class MannitoRateLimitError(MannitoConnectionError):
+    """Too many requests of this token (HTTP 429); retry_after = seconds to wait."""
+
+    def __init__(self, retry_after: int) -> None:
+        """Initialize with the wait the cloud asks for."""
+        super().__init__(f"rate limited, retry in {retry_after} s")
+        self.retry_after = retry_after
+
+
 class MannitoRequestError(MannitoError):
     """The cloud refused the request (HTTP 400, 404 or 409) with a reason."""
 
@@ -285,6 +294,75 @@ class Light:
 
 
 @dataclass(frozen=True, slots=True)
+class PhaseValues:
+    """Targets of the current phase: VPD or humidity (the other is None), light, CO2, circulation."""
+
+    day_temperature: float
+    night_temperature: float
+    day_vpd: float | None
+    night_vpd: float | None
+    day_humidity: float | None
+    night_humidity: float | None
+    light_intensity: int
+    light_hours: int
+    lights_on: str
+    sunrise_minutes: int
+    sunset_minutes: int
+    co2_day: int | None
+    circulation: int
+
+    @property
+    def uses_vpd(self) -> bool:
+        """The phase steers by VPD (else by humidity)."""
+        return self.day_vpd is not None or self.night_vpd is not None
+
+    @classmethod
+    def from_dict(cls, data: JsonObject) -> Self:
+        """Create from the JSON of the cloud."""
+        return cls(
+            day_temperature=float(data["dayTemperatureC"]),
+            night_temperature=float(data["nightTemperatureC"]),
+            day_vpd=_float(data.get("dayVpdKpa")),
+            night_vpd=_float(data.get("nightVpdKpa")),
+            day_humidity=_float(data.get("dayHumidityPct")),
+            night_humidity=_float(data.get("nightHumidityPct")),
+            light_intensity=int(data.get("lightIntensityPct", 0)),
+            light_hours=int(data.get("lightHours", 0)),
+            lights_on=data.get("lightsOn") or "00:00",
+            sunrise_minutes=int(data.get("sunriseMinutes", 0)),
+            sunset_minutes=int(data.get("sunsetMinutes", 0)),
+            co2_day=_int(data.get("co2DayPpm")),
+            circulation=int(data.get("circulationPct", 0)),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class PhaseSpan:
+    """A phase of the grow cycle with its start and end (planned for the coming ones)."""
+
+    name: str
+    kind: str
+    start: datetime | None
+    end: datetime | None
+    planned_days: int
+    current: bool
+    done: bool
+
+    @classmethod
+    def from_dict(cls, data: JsonObject) -> Self:
+        """Create from the JSON of the cloud."""
+        return cls(
+            name=data["name"],
+            kind=data.get("kind", ""),
+            start=_dt(data.get("startUtc")),
+            end=_dt(data.get("endUtc")),
+            planned_days=int(data.get("plannedDays", 0)),
+            current=bool(data.get("current", False)),
+            done=bool(data.get("done", False)),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class Phase:
     """The running grow cycle of a grow area."""
 
@@ -297,6 +375,8 @@ class Phase:
     progress: str
     next: str | None
     confirm_required: bool
+    values: PhaseValues | None = None
+    timeline: tuple[PhaseSpan, ...] = ()
 
     @classmethod
     def from_dict(cls, data: JsonObject) -> Self:
@@ -311,6 +391,8 @@ class Phase:
             progress=data.get("progress", ""),
             next=data.get("next"),
             confirm_required=bool(data.get("confirmRequired", False)),
+            values=PhaseValues.from_dict(data["values"]) if data.get("values") else None,
+            timeline=tuple(PhaseSpan.from_dict(item) for item in data.get("timeline") or ()),
         )
 
 
@@ -422,6 +504,62 @@ class Tank:
 
 
 @dataclass(frozen=True, slots=True)
+class Plant:
+    """A single plant standing in a grow area, with its latest height."""
+
+    id: str
+    number: int
+    name: str
+    section: str | None
+    site: int | None
+    since: datetime | None
+    height_mm: float | None
+    height_at: datetime | None
+
+    @classmethod
+    def from_dict(cls, data: JsonObject) -> Self:
+        """Create from the JSON of the cloud."""
+        return cls(
+            id=data["id"],
+            number=int(data.get("number", 0)),
+            name=data.get("name") or f"#{data.get('number', '')}",
+            section=data.get("section"),
+            site=_int(data.get("site")),
+            since=_dt(data.get("sinceLocal")),
+            height_mm=_float(data.get("heightMm")),
+            height_at=_dt(data.get("heightAtUtc")),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class Planting:
+    """A running planting of a grow area: variety, age, open problems and its plants standing there."""
+
+    id: str
+    variety: str
+    plant_count: int
+    start: datetime | None
+    days: int | None
+    measurements: int
+    open_inspections: int
+    plants: tuple[Plant, ...]
+
+    @classmethod
+    def from_dict(cls, data: JsonObject) -> Self:
+        """Create from the JSON of the cloud."""
+        return cls(
+            id=data["id"],
+            variety=data.get("variety", ""),
+            plant_count=int(data.get("plantCount", 0)),
+            start=_dt(data.get("startLocal")),
+            days=_int(data.get("days")),
+            measurements=int(data.get("measurements", 0)),
+            open_inspections=int(data.get("openInspections", 0)),
+            plants=tuple(Plant.from_dict(item) for item in data.get("plants") or ()),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class AreaDevice:
     """An output of the board assigned to a grow area, with its function there."""
 
@@ -461,6 +599,7 @@ class Area:
     tank: Tank | None
     warnings: tuple[str, ...]
     devices: tuple[AreaDevice, ...] = ()
+    plantings: tuple[Planting, ...] = ()
 
     @classmethod
     def from_dict(cls, data: JsonObject) -> Self:
@@ -484,7 +623,16 @@ class Area:
             tank=Tank.from_dict(data["tank"]) if data.get("tank") else None,
             warnings=tuple(w.get("title", "") for w in data.get("warnings") or ()),
             devices=tuple(AreaDevice.from_dict(item) for item in data.get("devices") or ()),
+            plantings=tuple(Planting.from_dict(item) for item in data.get("plantings") or ()),
         )
+
+    def plant(self, plant_id: str) -> tuple[Planting, Plant] | None:
+        """The planting and the plant with this id, None if it does not stand here."""
+        for planting in self.plantings:
+            for plant in planting.plants:
+                if plant.id == plant_id:
+                    return planting, plant
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -589,6 +737,65 @@ class MannitoClient:
             {"action": action, "days": days, "lightsOn": lights_on, "useCo2": use_co2},
         )
 
+    async def async_set_phase_values(self, area_id: str, changes: JsonObject) -> None:
+        """Change targets of the current phase; only the given ones change."""
+        await self._request("PATCH", f"/areas/{area_id}/phase-values", changes)
+
+    async def async_set_field_capacity(self, area_id: str, vwc: float | None = None) -> None:
+        """Store the field capacity of the probe pot (None = the current reading)."""
+        await self._request("POST", f"/areas/{area_id}/field-capacity", {"vwcPct": vwc})
+
+    async def async_tank_entry(self, area_id: str, kind: str, liters: float, note: str | None = None) -> None:
+        """Enter Fresh, TopUp, Withdrawal or LevelCheck into the tank book of the area."""
+        await self._request("POST", f"/areas/{area_id}/tank/entries", {"kind": kind, "liters": liters, "note": note})
+
+    async def async_tank_reading(
+        self, area_id: str, *, ec: float | None = None, ph: float | None = None, temperature: float | None = None
+    ) -> None:
+        """Record EC, pH or temperature measured in the tank."""
+        await self._request(
+            "POST", f"/areas/{area_id}/tank/readings", {"ecMs": ec, "ph": ph, "temperatureC": temperature}
+        )
+
+    async def async_record_measurement(
+        self, planting_id: str, target: str, value: float, *, plant_id: str | None = None, note: str | None = None
+    ) -> None:
+        """Record a measurement of a planting or one of its plants (PlantHeight in mm …)."""
+        await self._request(
+            "POST",
+            f"/plantings/{planting_id}/measurements",
+            {"target": target, "value": value, "plantId": plant_id, "note": note},
+        )
+
+    async def async_record_inspection(
+        self,
+        planting_id: str,
+        result: str,
+        *,
+        note: str | None = None,
+        plant_id: str | None = None,
+        problem: bool = False,
+    ) -> None:
+        """Record what was seen at a planting or one of its plants."""
+        await self._request(
+            "POST",
+            f"/plantings/{planting_id}/inspections",
+            {"result": result, "note": note, "plantId": plant_id, "problem": problem},
+        )
+
+    async def async_revoke_token(self) -> bool:
+        """Revoke the token of this client in the cloud (the board is removed or got another token).
+
+        True when it no longer works (also when it was revoked or expired already), False when the cloud could not be reached.
+        """
+        try:
+            await self._request("DELETE", "/token")
+        except MannitoAuthError:
+            return True
+        except MannitoError:
+            return False
+        return True
+
     async def async_update_firmware(self) -> None:
         """Install the newest firmware on the board (it restarts)."""
         await self._request("POST", "/firmware/update", {"force": False})
@@ -611,6 +818,9 @@ class MannitoClient:
                 raise MannitoAuthError("unauthorized")
             if response.status == 403:
                 raise MannitoForbiddenError("forbidden")
+            if response.status == 429:
+                retry = response.headers.get("Retry-After", "60")
+                raise MannitoRateLimitError(int(retry) if retry.isdigit() else 60)
             if response.status >= 500:
                 raise MannitoConnectionError(f"HTTP {response.status}")
             if response.status >= 400:
@@ -619,6 +829,8 @@ class MannitoClient:
                     problem = await response.json()
                     detail = str(problem.get("detail") or problem.get("title") or "")
                 raise MannitoRequestError(detail or f"HTTP {response.status}")
+            if response.status == 204:
+                return {}
             data = await response.json()
             if not isinstance(data, dict):
                 raise MannitoConnectionError("unexpected answer")

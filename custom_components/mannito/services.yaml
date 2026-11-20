@@ -68,3 +68,129 @@ grow_cycle_action:
     use_co2:
       selector:
         boolean:
+
+record_measurement:
+  fields:
+    target:
+      required: true
+      selector:
+        device:
+          filter:
+            integration: mannito
+    measurement:
+      required: true
+      default: height
+      selector:
+        select:
+          translation_key: measurement
+          options:
+            - height
+            - stem_thickness
+            - leaf_size
+            - plant_weight
+            - optic
+            - color
+    value:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100000
+          step: 0.1
+          mode: box
+    note:
+      selector:
+        text:
+          multiline: true
+
+record_note:
+  fields:
+    target:
+      required: true
+      selector:
+        device:
+          filter:
+            integration: mannito
+    condition:
+      required: true
+      default: acceptable
+      selector:
+        select:
+          translation_key: condition
+          options:
+            - perfect
+            - acceptable
+            - warning
+            - total_fail
+    note:
+      selector:
+        text:
+          multiline: true
+    problem:
+      default: false
+      selector:
+        boolean:
+
+tank_entry:
+  fields:
+    area:
+      required: true
+      selector:
+        device:
+          filter:
+            integration: mannito
+    kind:
+      required: true
+      default: top_up
+      selector:
+        select:
+          translation_key: tank_kind
+          options:
+            - fresh
+            - top_up
+            - withdrawal
+            - level_check
+    liters:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 10000
+          step: 0.1
+          unit_of_measurement: L
+          mode: box
+    note:
+      selector:
+        text:
+
+tank_reading:
+  fields:
+    area:
+      required: true
+      selector:
+        device:
+          filter:
+            integration: mannito
+    ec:
+      selector:
+        number:
+          min: 0
+          max: 20
+          step: 0.01
+          unit_of_measurement: mS/cm
+          mode: box
+    ph:
+      selector:
+        number:
+          min: 0
+          max: 14
+          step: 0.1
+          mode: box
+    temperature:
+      selector:
+        number:
+          min: -5
+          max: 60
+          step: 0.1
+          unit_of_measurement: °C
+          mode: box

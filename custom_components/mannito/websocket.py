@@ -11,7 +11,7 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 import probatio
 
 from .const import DOMAIN
-from .coordinator import MannitoConfigEntry
+from .coordinator import MannitoConfigEntry, plant_identifier
 
 OUTPUT_CONTROLS = ("light", "fan", "switch", "valve")
 OUTPUT_KEYS = (*OUTPUT_CONTROLS, "automatic", "on", "manual_override")
@@ -44,10 +44,12 @@ def ws_area(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
     if entry.state is not ConfigEntryState.LOADED:
         connection.send_error(msg["id"], "not_loaded", f"The board {entry.title} is not loaded.")
         return
-    connection.send_result(msg["id"], area_payload(hass, entry, area_id))
+    connection.send_result(msg["id"], area_payload(hass, entry, area_id, msg["device_id"]))
 
 
-def area_payload(hass: HomeAssistant, entry: MannitoConfigEntry, area_id: str) -> dict[str, Any]:
+def area_payload(
+    hass: HomeAssistant, entry: MannitoConfigEntry, area_id: str, device_id: str | None = None
+) -> dict[str, Any]:
     """The grow area, its entities by key, the outputs of the board and the entities of the board."""
     data = entry.runtime_data.data
     board_id = data.board.id
@@ -55,10 +57,14 @@ def area_payload(hass: HomeAssistant, entry: MannitoConfigEntry, area_id: str) -
     area_entities: dict[str, str] = {}
     board_entities: dict[str, str] = {}
     output_entities: dict[str, dict[str, str]] = {}
+    plant_entities: dict[str, dict[str, str]] = {}
     for item in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id):
         if item.disabled_by is not None:
             continue
         unique_id = item.unique_id
+        if unique_id.startswith("plant_") and len(unique_id) > 43:
+            plant_entities.setdefault(unique_id[6:42], {})[unique_id[43:]] = item.entity_id
+            continue
         if unique_id.startswith(f"{area_id}_"):
             area_entities[unique_id[len(area_id) + 1 :]] = item.entity_id
             continue
@@ -94,8 +100,25 @@ def area_payload(hass: HomeAssistant, entry: MannitoConfigEntry, area_id: str) -
                 "entities": output_entities[device.id],
             }
         )
+    devices = dr.async_get(hass)
+    plants = []
+    for planting in area.plantings if area else ():
+        for plant in planting.plants:
+            plant_device = devices.async_get_child_device_by_identifier(plant_identifier(plant.id), entry.entry_id)
+            plants.append(
+                {
+                    "plant_id": plant.id,
+                    "planting_id": planting.id,
+                    "name": plant.name,
+                    "variety": planting.variety,
+                    "days": planting.days,
+                    "device_id": plant_device.id if plant_device else None,
+                    "entities": plant_entities.get(plant.id, {}),
+                }
+            )
     return {
         "area_id": area_id,
+        "area_device_id": device_id,
         "name": area.name if area else None,
         "board": data.board.name,
         "can_control": data.access.can_control,
@@ -103,4 +126,5 @@ def area_payload(hass: HomeAssistant, entry: MannitoConfigEntry, area_id: str) -
         "entities": area_entities,
         "board_entities": board_entities,
         "outputs": outputs,
+        "plants": plants,
     }

@@ -25,7 +25,7 @@
       },
       "reconfigure": {
         "title": "Change cloud address or token",
-        "description": "The token must belong to the same board.",
+        "description": "The token must belong to the same board. A new token replaces the old one, which is then revoked in the Mannito cloud.",
         "data": {
           "url": "Cloud address",
           "api_token": "API token"
@@ -69,6 +69,19 @@
     "button": {
       "automatic": {
         "name": "{name} automatic"
+      },
+      "field_capacity": {
+        "name": "Field capacity from current reading"
+      }
+    },
+    "calendar": {
+      "grow_phases": {
+        "name": "Grow phases"
+      }
+    },
+    "time": {
+      "lights_on": {
+        "name": "Lights on"
       }
     },
     "number": {
@@ -110,6 +123,33 @@
       },
       "max_day_ml": {
         "name": "Water per pot and day at most"
+      },
+      "day_temperature": {
+        "name": "Day temperature"
+      },
+      "night_temperature": {
+        "name": "Night temperature"
+      },
+      "day_vpd": {
+        "name": "Day VPD"
+      },
+      "night_vpd": {
+        "name": "Night VPD"
+      },
+      "day_humidity": {
+        "name": "Day humidity"
+      },
+      "night_humidity": {
+        "name": "Night humidity"
+      },
+      "light_intensity": {
+        "name": "Light intensity"
+      },
+      "co2_day": {
+        "name": "CO₂ with light on"
+      },
+      "circulation": {
+        "name": "Circulation"
       }
     },
     "select": {
@@ -227,6 +267,27 @@
       },
       "sync_pending": {
         "name": "Pending changes"
+      },
+      "open_problems": {
+        "name": "Open problems"
+      },
+      "light_hours": {
+        "name": "Light hours"
+      },
+      "plant_height": {
+        "name": "Height"
+      },
+      "plant_measured": {
+        "name": "Last measured"
+      },
+      "plant_age": {
+        "name": "Age"
+      },
+      "plant_variety": {
+        "name": "Variety"
+      },
+      "plant_location": {
+        "name": "Location"
       }
     },
     "switch": {
@@ -267,9 +328,44 @@
     },
     "use_co2_required": {
       "message": "Choose whether CO₂ is dosed."
+    },
+    "plant_gone": {
+      "message": "The plant no longer stands in a grow area of the board (harvested or moved)."
+    },
+    "choose_plant": {
+      "message": "This grow area has several plantings or none: choose a plant."
+    },
+    "not_a_plant": {
+      "message": "Choose a plant or a grow area of a Mannito board."
     }
   },
   "selector": {
+    "measurement": {
+      "options": {
+        "height": "Height (cm)",
+        "stem_thickness": "Stem thickness (mm)",
+        "leaf_size": "Leaf size",
+        "plant_weight": "Plant weight (g)",
+        "optic": "Look (1-10)",
+        "color": "Colour (1-10)"
+      }
+    },
+    "condition": {
+      "options": {
+        "perfect": "Perfect",
+        "acceptable": "Fine",
+        "warning": "Warning",
+        "total_fail": "Lost"
+      }
+    },
+    "tank_kind": {
+      "options": {
+        "fresh": "Mixed fresh (holds exactly the litres)",
+        "top_up": "Topped up (litres added)",
+        "withdrawal": "Taken out (litres)",
+        "level_check": "Level checked (litres in it)"
+      }
+    },
     "grow_cycle_action": {
       "options": {
         "confirm_phase": "Confirm phase (harvest or drying done)",
@@ -306,6 +402,94 @@
         "ml_per_pot": {
           "name": "ml per pot",
           "description": "Test shot: water per pot (1-1000)."
+        }
+      }
+    },
+    "record_measurement": {
+      "name": "Record measurement",
+      "description": "Records a measurement of a plant, e.g. its height. For a grow area with a single planting it applies to all its plants.",
+      "fields": {
+        "target": {
+          "name": "Plant",
+          "description": "The plant (device), or a grow area with a single planting."
+        },
+        "measurement": {
+          "name": "Measurement",
+          "description": "What was measured."
+        },
+        "value": {
+          "name": "Value",
+          "description": "The value in the unit of the measurement (height in cm)."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Optional note."
+        }
+      }
+    },
+    "record_note": {
+      "name": "Record observation",
+      "description": "Records what was seen at a plant; as a problem it stays open until it is resolved in the cloud.",
+      "fields": {
+        "target": {
+          "name": "Plant",
+          "description": "The plant (device), or a grow area with a single planting."
+        },
+        "condition": {
+          "name": "Condition",
+          "description": "How the plant looks."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Optional note."
+        },
+        "problem": {
+          "name": "Problem",
+          "description": "Stays open until it is resolved."
+        }
+      }
+    },
+    "tank_entry": {
+      "name": "Tank entry",
+      "description": "Enters what happened to the tank of a grow area: mixed fresh, topped up, taken out or level checked. The cloud works out the level from it.",
+      "fields": {
+        "area": {
+          "name": "Grow area",
+          "description": "The grow area whose tank is meant."
+        },
+        "kind": {
+          "name": "What happened",
+          "description": "Mixed fresh, topped up, taken out or level checked."
+        },
+        "liters": {
+          "name": "Litres",
+          "description": "Litres (see what happened)."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Optional note."
+        }
+      }
+    },
+    "tank_reading": {
+      "name": "Tank reading",
+      "description": "Records EC, pH or temperature measured in the tank of a grow area.",
+      "fields": {
+        "area": {
+          "name": "Grow area",
+          "description": "The grow area whose tank is meant."
+        },
+        "ec": {
+          "name": "EC",
+          "description": "EC in mS/cm."
+        },
+        "ph": {
+          "name": "pH",
+          "description": "pH value."
+        },
+        "temperature": {
+          "name": "Temperature",
+          "description": "Water temperature in °C."
         }
       }
     },

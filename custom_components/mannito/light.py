@@ -65,10 +65,8 @@ class MannitoLight(OutputEntity, LightEntity):
         power: int | None = None
         if ATTR_BRIGHTNESS in kwargs and self.output.dimmable:
             power = max(1, ranged_value_to_percentage(BRIGHTNESS_SCALE, kwargs[ATTR_BRIGHTNESS]))
-        await self.async_command(
-            self.coordinator.client.async_set_device_state(self.device_id, True, power_percent=power)
-        )
+        await self.async_switch(True, power_percent=power)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Switch the lamp off (by hand)."""
-        await self.async_command(self.coordinator.client.async_set_device_state(self.device_id, False))
+        await self.async_switch(False)

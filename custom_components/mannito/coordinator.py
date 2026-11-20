@@ -8,7 +8,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import BoardSnapshot, MannitoAuthError, MannitoClient, MannitoError
+from .api import BoardSnapshot, MannitoAuthError, MannitoClient, MannitoError, MannitoRateLimitError
 from .const import DOMAIN, LOGGER, SCAN_INTERVAL
 
 type MannitoConfigEntry = ConfigEntry[MannitoCoordinator]
@@ -22,6 +22,11 @@ def board_identifier(board_id: str) -> tuple[str, str]:
 def area_identifier(area_id: str) -> tuple[str, str]:
     """Device registry identifier of a grow area."""
     return (DOMAIN, f"area_{area_id}")
+
+
+def plant_identifier(plant_id: str) -> tuple[str, str]:
+    """Device registry identifier of a plant."""
+    return (DOMAIN, f"plant_{plant_id}")
 
 
 def bus_identifier(board_id: str, key: str) -> tuple[str, str]:
@@ -47,12 +52,21 @@ class MannitoCoordinator(DataUpdateCoordinator[BoardSnapshot]):
         self.client = client
         # registry id of the board device: parent of the grow areas, via device of the bus modules
         self.board_device_id = ""
+        # unique ids of the entities the board provides now; anything else of this entry in the registry is stale
+        self.provided: set[str] = set()
 
     async def _async_update_data(self) -> BoardSnapshot:
         try:
             snapshot = await self.client.async_get_board()
         except MannitoAuthError as err:
             raise ConfigEntryAuthFailed(translation_domain=DOMAIN, translation_key="invalid_auth") from err
+        except MannitoRateLimitError as err:
+            raise UpdateFailed(
+                retry_after=err.retry_after,
+                translation_domain=DOMAIN,
+                translation_key="update_failed",
+                translation_placeholders={"error": err.message},
+            ) from err
         except MannitoError as err:
             raise UpdateFailed(
                 translation_domain=DOMAIN,
@@ -82,4 +96,10 @@ def current_identifiers(snapshot: BoardSnapshot) -> set[tuple[str, str]]:
     current = {board_identifier(snapshot.board.id)}
     current |= {area_identifier(area_id) for area_id in snapshot.areas}
     current |= {bus_identifier(snapshot.board.id, key) for key in snapshot.bus_devices}
+    current |= {
+        plant_identifier(plant.id)
+        for area in snapshot.areas.values()
+        for planting in area.plantings
+        for plant in planting.plants
+    }
     return current

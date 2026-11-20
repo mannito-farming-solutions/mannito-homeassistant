@@ -6,14 +6,23 @@ strategy to Custom (starting from the values in use), as on the web page.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from homeassistant.components.number import NumberEntity, NumberEntityDescription, NumberMode
-from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTime, UnitOfVolume
+from homeassistant.const import (
+    CONCENTRATION_PARTS_PER_MILLION,
+    PERCENTAGE,
+    EntityCategory,
+    UnitOfPressure,
+    UnitOfTemperature,
+    UnitOfTime,
+    UnitOfVolume,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .api import Area
+from .api import Area, PhaseValues
 from .coordinator import MannitoConfigEntry, MannitoCoordinator
 from .entity import AreaEntity, add_entities_dynamically
 
@@ -167,6 +176,16 @@ async def async_setup_entry(
         ],
         lambda area_id: [IrrigationNumber(coordinator, coordinator.data.areas[area_id], d) for d in NUMBERS],
     )
+    add_entities_dynamically(
+        entry,
+        async_add_entities,
+        lambda: [
+            area_id
+            for area_id, area in coordinator.data.areas.items()
+            if coordinator.data.access.can_configure and area.phase is not None and area.phase.values is not None
+        ],
+        lambda area_id: [PhaseNumber(coordinator, coordinator.data.areas[area_id], d) for d in PHASE_NUMBERS],
+    )
 
 
 class IrrigationNumber(AreaEntity, NumberEntity):
@@ -199,5 +218,152 @@ class IrrigationNumber(AreaEntity, NumberEntity):
             self.coordinator.client.async_set_irrigation(
                 self.area_id,
                 {self.entity_description.field: round(value) if self.entity_description.integer else round(value, 1)},
+            )
+        )
+
+
+@dataclass(frozen=True, kw_only=True)
+class PhaseNumberDescription(NumberEntityDescription):
+    """A target of the current phase; field = its name in the board API."""
+
+    field: str
+    value_fn: Callable[[PhaseValues], float | None]
+    integer: bool = False
+
+
+PHASE_NUMBERS: tuple[PhaseNumberDescription, ...] = (
+    PhaseNumberDescription(
+        key="day_temperature",
+        translation_key="day_temperature",
+        field="dayTemperatureC",
+        value_fn=lambda v: v.day_temperature,
+        native_min_value=10,
+        native_max_value=35,
+        native_step=0.5,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+    ),
+    PhaseNumberDescription(
+        key="night_temperature",
+        translation_key="night_temperature",
+        field="nightTemperatureC",
+        value_fn=lambda v: v.night_temperature,
+        native_min_value=10,
+        native_max_value=35,
+        native_step=0.5,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+    ),
+    PhaseNumberDescription(
+        key="day_vpd",
+        translation_key="day_vpd",
+        field="dayVpdKpa",
+        value_fn=lambda v: v.day_vpd,
+        native_min_value=0.3,
+        native_max_value=2.0,
+        native_step=0.05,
+        native_unit_of_measurement=UnitOfPressure.KPA,
+    ),
+    PhaseNumberDescription(
+        key="night_vpd",
+        translation_key="night_vpd",
+        field="nightVpdKpa",
+        value_fn=lambda v: v.night_vpd,
+        native_min_value=0.3,
+        native_max_value=2.0,
+        native_step=0.05,
+        native_unit_of_measurement=UnitOfPressure.KPA,
+    ),
+    PhaseNumberDescription(
+        key="day_humidity",
+        translation_key="day_humidity",
+        field="dayHumidityPct",
+        value_fn=lambda v: v.day_humidity,
+        native_min_value=30,
+        native_max_value=90,
+        native_step=1,
+        native_unit_of_measurement=PERCENTAGE,
+        entity_registry_enabled_default=False,
+    ),
+    PhaseNumberDescription(
+        key="night_humidity",
+        translation_key="night_humidity",
+        field="nightHumidityPct",
+        value_fn=lambda v: v.night_humidity,
+        native_min_value=30,
+        native_max_value=90,
+        native_step=1,
+        native_unit_of_measurement=PERCENTAGE,
+        entity_registry_enabled_default=False,
+    ),
+    PhaseNumberDescription(
+        key="light_intensity",
+        translation_key="light_intensity",
+        field="lightIntensityPct",
+        integer=True,
+        value_fn=lambda v: v.light_intensity,
+        native_min_value=0,
+        native_max_value=100,
+        native_step=1,
+        native_unit_of_measurement=PERCENTAGE,
+    ),
+    PhaseNumberDescription(
+        key="co2_day",
+        translation_key="co2_day",
+        field="co2DayPpm",
+        integer=True,
+        value_fn=lambda v: v.co2_day,
+        native_min_value=0,
+        native_max_value=2000,
+        native_step=50,
+        native_unit_of_measurement=CONCENTRATION_PARTS_PER_MILLION,
+        entity_registry_enabled_default=False,
+    ),
+    PhaseNumberDescription(
+        key="circulation",
+        translation_key="circulation",
+        field="circulationPct",
+        integer=True,
+        value_fn=lambda v: v.circulation,
+        native_min_value=0,
+        native_max_value=100,
+        native_step=5,
+        native_unit_of_measurement=PERCENTAGE,
+    ),
+)
+
+
+class PhaseNumber(AreaEntity, NumberEntity):
+    """A target of the current grow phase; the schedules of the area follow at once.
+
+    A phase steers either by VPD or by humidity: setting one of them switches the phase to it (the other pair then shows unknown).
+    """
+
+    entity_description: PhaseNumberDescription
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_mode = NumberMode.BOX
+
+    def __init__(self, coordinator: MannitoCoordinator, area: Area, description: PhaseNumberDescription) -> None:
+        """Initialize the number."""
+        super().__init__(coordinator, area, description.key)
+        self.entity_description = description
+
+    @property
+    def native_value(self) -> float | None:
+        """The target of the current phase."""
+        phase = self.area.phase
+        if phase is None or phase.values is None:
+            return None
+        return self.entity_description.value_fn(phase.values)
+
+    @property
+    def available(self) -> bool:
+        """Available while a grow cycle runs."""
+        return super().available and self.area.phase is not None and self.area.phase.values is not None
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Change the target of the current phase."""
+        await self.async_command(
+            self.coordinator.client.async_set_phase_values(
+                self.area_id,
+                {self.entity_description.field: round(value) if self.entity_description.integer else round(value, 2)},
             )
         )

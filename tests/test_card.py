@@ -12,7 +12,7 @@ from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClien
 from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
 from custom_components.mannito.const import DOMAIN
-from custom_components.mannito.frontend import CARD_FILE, CARD_URL, async_register_card
+from custom_components.mannito.frontend import CARD_FILE, CARD_URL, async_register_card, async_show_card
 
 from .conftest import API, AREA_ID, BOARD_ID, setup_integration
 
@@ -53,6 +53,11 @@ async def test_area_for_the_card(
         "manual_override": "binary_sensor.zelt_abluft_manual_operation",
     }
     assert [o["assigned"] for o in result["outputs"]] == [True, False, False, False]
+    plant = next(p for p in result["plants"] if p["name"] == "#3")
+    assert plant["device_id"] is not None
+    assert plant["entities"]["height"] == "sensor.zelt_green_poison_3_height"
+    assert result["entities"]["lights_on"] == "time.zelt_green_poison_lights_on"
+    assert result["entities"]["grow_phases"] == "calendar.zelt_green_poison_grow_phases"
 
     board_device = devices.async_get_device_by_identifier((DOMAIN, BOARD_ID), mock_config_entry.entry_id)
     assert board_device is not None
@@ -70,11 +75,15 @@ async def test_card_is_served_and_loaded(hass: HomeAssistant) -> None:
     hass.http = http
     with patch("homeassistant.components.frontend.add_extra_js_url") as add_url:
         await async_register_card(hass)
+        add_url.assert_not_called()
+        async_show_card(hass)
+        async_show_card(hass)
 
     paths = http.async_register_static_paths.call_args.args[0]
     assert paths[0].url_path == CARD_URL
     assert paths[0].path == str(CARD_FILE)
     assert CARD_FILE.is_file()
+    add_url.assert_called_once()
     assert add_url.call_args.args[1].startswith(f"{CARD_URL}?v=")
 
 
@@ -82,3 +91,4 @@ async def test_no_card_without_frontend(hass: HomeAssistant) -> None:
     """Without a web server nothing is registered."""
     hass.http = None
     await async_register_card(hass)
+    async_show_card(hass)

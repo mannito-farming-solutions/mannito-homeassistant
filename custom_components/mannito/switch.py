@@ -55,11 +55,11 @@ class OutputSwitch(OutputEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Switch on (by hand: it leaves the automatic control)."""
-        await self.async_command(self.coordinator.client.async_set_device_state(self.device_id, True))
+        await self.async_switch(True)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Switch off (by hand)."""
-        await self.async_command(self.coordinator.client.async_set_device_state(self.device_id, False))
+        await self.async_switch(False)
 
 
 class AreaEnabledSwitch(AreaEntity, SwitchEntity):

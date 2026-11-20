@@ -10,6 +10,7 @@ from typing import Any
 
 from homeassistant.const import CONF_API_TOKEN, CONF_URL
 from homeassistant.core import HomeAssistant
+from homeassistant.util import dt as dt_util
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
@@ -21,6 +22,8 @@ TOKEN = "mnt_" + "A" * 43
 BOARD_ID = "c0ddf638-1007-4162-a038-e7753a4b75c1"
 AREA_ID = "dd3884a0-83f0-4e98-8437-20744b70f645"
 API = f"{URL}/api/v1/board"
+PLANTING_ID = "44444444-0000-4000-8000-000000000001"
+PLANT_ID = "55555555-0000-4000-8000-000000000003"
 
 BOARD_JSON: dict[str, Any] = json.loads((Path(__file__).parent / "fixtures" / "board.json").read_text(encoding="utf-8"))
 
@@ -33,8 +36,12 @@ def auto_enable_custom_integrations(enable_custom_integrations: None) -> Generat
 
 @pytest.fixture
 def board() -> dict[str, Any]:
-    """A copy of the board answer of the cloud, to change in a test."""
-    return copy.deepcopy(BOARD_JSON)
+    """A copy of the board answer of the cloud, to change in a test (sensor values are fresh)."""
+    data = copy.deepcopy(BOARD_JSON)
+    now = dt_util.utcnow().isoformat().replace("+00:00", "Z")
+    for sensor in data["sensors"]:
+        sensor["valueAtUtc"] = now
+    return data
 
 
 @pytest.fixture
@@ -73,6 +80,12 @@ def mock_cloud(aioclient_mock: AiohttpClientMocker, board: dict[str, Any]) -> Ai
     aioclient_mock.post(f"{API}/areas/{AREA_ID}/irrigation/run", json={"success": True, "message": "ok"})
     aioclient_mock.post(f"{API}/areas/{AREA_ID}/grow-cycle", json={"success": True, "message": "ok"})
     aioclient_mock.post(f"{API}/firmware/update", json={"success": True, "message": "ok"})
+    aioclient_mock.patch(f"{API}/areas/{AREA_ID}/phase-values", json={"success": True, "message": "ok"})
+    aioclient_mock.post(f"{API}/areas/{AREA_ID}/field-capacity", json={"success": True, "message": "ok"})
+    aioclient_mock.post(f"{API}/areas/{AREA_ID}/tank/entries", json={"success": True, "message": "ok"})
+    aioclient_mock.post(f"{API}/areas/{AREA_ID}/tank/readings", json={"success": True, "message": "ok"})
+    aioclient_mock.post(f"{API}/plantings/{PLANTING_ID}/measurements", json={"success": True, "message": "ok"})
+    aioclient_mock.post(f"{API}/plantings/{PLANTING_ID}/inspections", json={"success": True, "message": "ok"})
     return aioclient_mock
 
 

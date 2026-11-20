@@ -46,7 +46,8 @@ siehst du, wann ein Token zuletzt benutzt wurde, und kannst ihn jederzeit widerr
 | API-Token | der Token der Platine (`mnt_…`) |
 
 Die Integration prüft den Token sofort. Jede Platine wird ein eigener Eintrag. Cloud-Adresse und Token lassen sich später über
-**„Neu konfigurieren“** ändern. Wird ein Token widerrufen oder läuft er ab, fragt Home Assistant von selbst nach einem neuen.
+**„Neu konfigurieren“** ändern. Trägst du dort einen neuen Token ein, widerruft die Integration den alten in der Cloud. Wird ein
+Token widerrufen oder läuft er ab, fragt Home Assistant von selbst nach einem neuen.
 
 ## Was in Home Assistant erscheint
 
@@ -69,13 +70,26 @@ Die Platine ist ein Gerät. Darunter hängen je ein Gerät pro Grow-Bereich und 
 - Wachstumsphase, Tag des Grows, Tag der Phase
 - Bewässerung: Phase P0–P3, Substratfeuchte, Tageshoch, Dryback, Shots und Wasser pro Topf heute, letzter und nächster Shot,
   Feldkapazität, Tankinhalt und -füllstand
+- **Kalender „Wachstumsphasen“**: abgeschlossene, laufende und geplante Phasen des Grow-Zyklus
 - mit dem Recht **Konfigurieren**:
+  - **Sollwerte der laufenden Phase**: Tag-/Nacht-Temperatur, VPD Tag/Nacht (oder Luftfeuchte), Lichtstärke, Umluft, CO₂
+  - **Licht an** als Uhrzeit, der ganze Tag des Grow-Zyklus verschiebt sich mit
+  - Taste **„Feldkapazität aus aktuellem Wert“**, nach dem Durchnässen und Abtropfen drücken
   - Schalter **„Regelung“**
   - Auswahl **Klimaregelung** (Fuzzy, Fuzzy + PI, MPC), **Bewässerung** (Aus, Zeitplan, Dryback) und **Dryback-Steuerung**
   - Zahlenfelder für alle Dryback-Werte und die Tageslimits
 
-Neue Ausgänge, Sensoren, Grow-Bereiche und Bus-Module erscheinen von selbst. Entfernte Grow-Bereiche und Bus-Module verschwinden
-wieder.
+**Pflanzen**: Jede Pflanze, die in einem Grow-Bereich steht, ist ein eigenes Gerät, zum Beispiel „Green Poison #3“. Sie hat:
+- **Höhe** (letzte Messung, in cm) und wann zuletzt gemessen wurde
+- **Alter** in Tagen, **Sorte**, **Standort** (Topf/Abschnitt und Platz)
+
+Der Grow-Bereich zeigt die Zahl der **offenen Probleme** seiner Pflanzungen.
+
+Schaltest du einen Ausgang, zeigt Home Assistant den neuen Zustand sofort an. Die Platine bestätigt ihn wenige Sekunden später.
+
+Neue Ausgänge, Sensoren, Grow-Bereiche, Pflanzen und Bus-Module erscheinen von selbst. Was du in der Cloud löschst oder ausblendest,
+verschwindet wieder, ebenso geerntete Pflanzen. Hat ein neuer Token weniger Rechte, entfernt die Integration die Schalter und
+Einstellungen, die er nicht mehr darf. Es bleiben keine Entitäten „nicht mehr verfügbar“ zurück.
 
 ## Die Mannito-Karte
 
@@ -83,15 +97,21 @@ Die Integration bringt eine eigene Dashboard-Karte mit. Sie lädt automatisch, e
 zeigt einen Grow-Bereich auf drei Reitern:
 
 - **Übersicht**
+  - Zeitachse der Wachstumsphasen mit „Heute“-Markierung
   - Klima gegen Soll (Temperatur, Feuchte, VPD, CO₂) mit Abweichungsanzeige, Blatt und Zuluft
   - Substratfeuchte auf einer Skala mit Tageshoch, Feldkapazität, P2-Auslöser und Notfall-Grenze
   - Shots und Wasser heute, Dryback, nächster oder letzter Shot, Tankfüllstand
+  - Tankbuch mit einem Klick: nachgefüllt, frisch angemischt, Füllstand (Liter)
   - Taste „Ventile 10 s“
+- **Pflanzen**
+  - jede Pflanze mit Höhe, Alter und wann zuletzt gemessen
+  - Höhe eintragen und Beobachtungen festhalten, wahlweise als Problem
 - **Geräte**
   - die Geräte des Bereichs mit Schieber (dimmbare Lampe, Lüfter), Schalter oder „10 s öffnen“ (Ventile)
   - Hinweis „Hand“ bei Handbetrieb und eine Automatik-Taste je Gerät
 - **Einstellungen**
-  - Regelung, Klimaregelung, Bewässerung, Dryback-Steuerung und alle Dryback-Werte
+  - Sollwerte der Phase (Licht an, Temperaturen, VPD, Lichtstärke, Umluft)
+  - Regelung, Klimaregelung, Bewässerung, Dryback-Steuerung und alle Dryback-Werte, Feldkapazität messen
   - Grow-Zyklus: Licht-an-Zeit, Verschieben, nächste Phase, Phase bestätigen
   - Firmware der Platine
 
@@ -113,6 +133,13 @@ das Recht **Steuern** sind die Geräte nur zu sehen, nicht zu schalten.
 | `mannito.open_valve` | Ein Ventil 1–60 Sekunden öffnen. Danach schließt es von selbst. |
 | `mannito.run_valves` | Alle Ventile eines Grow-Bereichs nacheinander öffnen: Sekunden (Durchfluss messen) oder ml pro Topf (Test-Shot). Jedes Ventil höchstens 60 Sekunden. |
 | `mannito.grow_cycle_action` | Phase bestätigen, nächste Phase starten, Phase verschieben, Licht-an-Zeit setzen, CO₂ an oder aus |
+| `mannito.record_measurement` | Messung einer Pflanze eintragen: Höhe (cm), Stammdicke, Blattgröße, Gewicht, Optik, Farbe |
+| `mannito.record_note` | Beobachtung zu einer Pflanze eintragen, wahlweise als offenes Problem |
+| `mannito.tank_entry` | Tankbuch: frisch angemischt, nachgefüllt, entnommen, Füllstand geprüft (Liter) |
+| `mannito.tank_reading` | EC, pH oder Temperatur im Tank eintragen |
+
+Messung und Beobachtung nehmen eine Pflanze. Hat ein Grow-Bereich nur eine Pflanzung, geht auch der Grow-Bereich, dann gilt der
+Eintrag für alle seine Pflanzen. Einträge brauchen das Recht **Steuern**.
 
 ### Beispiele
 
@@ -129,6 +156,16 @@ automation:
       - action: notify.mobile_app_handy
         data:
           message: "Das Zelt läuft im Notbetrieb – bitte nachsehen."
+```
+
+Höhe jeden Sonntag per Benachrichtigung abfragen und eintragen lassen (Beispiel mit festem Wert):
+
+```yaml
+action: mannito.record_measurement
+data:
+  target: <Geräte-ID der Pflanze>
+  measurement: height
+  value: 42
 ```
 
 Tank fast leer:
@@ -148,7 +185,8 @@ automation:
 
 ## Wie die Daten kommen
 
-Home Assistant fragt die Cloud alle **30 Sekunden** ab und nach jedem Befehl sofort. Die Platine meldet ihre Werte etwa einmal pro
+Home Assistant fragt die Cloud alle **30 Sekunden** ab, nach einer Einstellung sofort und nach einem Schaltbefehl nach wenigen
+Sekunden, sobald die Platine ihn bestätigt hat. Die Platine meldet ihre Werte etwa einmal pro
 Minute an die Cloud. Ein Wert kann also bis zu anderthalb Minuten alt sein.
 
 ## Grenzen
@@ -168,14 +206,26 @@ Minute an die Cloud. Ein Wert kann also bis zu anderthalb Minuten alt sein.
 | „Der Token ist unbekannt, widerrufen oder abgelaufen“ | In der Cloud einen neuen Token erstellen und über die Reparatur-Meldung eintragen. |
 | „Dem API-Token fehlt das Recht dafür“ | Einen Token mit dem Recht **Steuern** oder **Konfigurieren** erstellen und über „Neu konfigurieren“ eintragen. |
 | „Die Mannito-Cloud hat abgelehnt: …“ | Die Cloud nennt den Grund, zum Beispiel Platine offline oder Ventil länger als 60 s. |
+| „Zu viele Anfragen“ in den Protokollen | Ein Token darf 120 Anfragen pro Minute stellen. Mehrere Home-Assistant-Installationen mit demselben Token teilen sich das; gib jeder ihren eigenen Token. |
+| Ein Sensor der Platine zeigt „Unbekannt“ | Sein letzter Wert ist älter als 15 Minuten: Sonde abgesteckt oder Bus-Modul offline. |
 | Alle Entitäten nicht verfügbar | Platine offline oder Cloud nicht erreichbar. Den Online-Status der Platine prüfen. |
 
 Für Fehlerberichte bitte die **Diagnose** des Eintrags herunterladen. Sie enthält keinen Token.
 
 ## Entfernen
 
-**Einstellungen → Geräte & Dienste → Mannito → ⋮ → Löschen.** Danach den Token in der Cloud unter **„API-Zugänge“** widerrufen.
-Bei manueller Installation zum Schluss den Ordner `custom_components/mannito` löschen.
+**Einstellungen → Geräte & Dienste → Mannito → ⋮ → Löschen.** Dabei passiert von selbst:
+
+- Geräte und Entitäten der Platine verschwinden aus Home Assistant.
+- Die Integration widerruft ihren Token in der Cloud; unter **„API-Zugänge“** steht er danach als widerrufen. War die Cloud
+  gerade nicht erreichbar, steht ein Hinweis im Protokoll. Dann den Token dort von Hand widerrufen.
+- Nach der letzten Platine lädt Home Assistant die Mannito-Karte nicht mehr. Dashboards, auf denen sie noch liegt, zeigen dort
+  einen Fehler, bis du die Karte aus dem Dashboard nimmst.
+
+Bei manueller Installation zum Schluss den Ordner `custom_components/mannito` löschen und Home Assistant neu starten; über HACS
+die Integration dort entfernen.
+
+Willst du die Platine wieder hinzufügen, erstelle in der Cloud einen neuen Token: der alte ist widerrufen.
 
 ## Entwicklung
 

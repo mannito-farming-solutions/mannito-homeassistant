@@ -101,7 +101,14 @@ class MannitoConfigFlow(ConfigFlow, domain=DOMAIN):
             if snapshot is not None:
                 await self.async_set_unique_id(snapshot.board.id)
                 self._abort_if_unique_id_mismatch(reason="wrong_board")
-                return self.async_update_reload_and_abort(entry, data_updates={CONF_URL: url, CONF_API_TOKEN: token})
+                old_url, old_token = entry.data[CONF_URL], entry.data[CONF_API_TOKEN]
+                result = self.async_update_reload_and_abort(entry, data_updates={CONF_URL: url, CONF_API_TOKEN: token})
+                if token != old_token:
+                    # the replaced token would keep working: revoke it (the board reloads with the new one meanwhile)
+                    old = MannitoClient(async_get_clientsession(self.hass), old_url, old_token)
+                    if not await old.async_revoke_token():
+                        LOGGER.warning("The replaced API token could not be revoked; revoke it in the Mannito cloud")
+                return result
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=self.add_suggested_values_to_schema(

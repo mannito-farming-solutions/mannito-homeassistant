@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -18,6 +18,7 @@ from homeassistant.const import (
     PERCENTAGE,
     EntityCategory,
     UnitOfConductivity,
+    UnitOfLength,
     UnitOfPressure,
     UnitOfTemperature,
     UnitOfTime,
@@ -27,12 +28,23 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .api import Area, BoardSnapshot, Sensor
+from .api import Area, BoardSnapshot, Plant, Planting, Sensor
 from .coordinator import MannitoConfigEntry, MannitoCoordinator
-from .entity import AreaEntity, BoardEntity, MannitoEntity, add_entities_dynamically, bus_device_info
+from .entity import (
+    AreaEntity,
+    BoardEntity,
+    MannitoEntity,
+    PlantEntity,
+    add_entities,
+    add_entities_dynamically,
+    bus_device_info,
+)
 
 # Sensors only read, the coordinator fetches everything at once
 PARALLEL_UPDATES = 0
+
+# A sensor value older than this is not shown any more (the probe is unplugged or the board lost it)
+STALE_AFTER = timedelta(minutes=15)
 
 AREA_STATUS = ["neutral", "ok", "attention", "problem", "nodata"]
 
@@ -43,6 +55,8 @@ class AreaSensorDescription(SensorEntityDescription):
 
     value_fn: Callable[[Area], float | int | str | datetime | None]
     exists_fn: Callable[[Area], bool] = lambda _: True
+    # exists with its reading: the entity stays while the area exists, also while the reading is missing
+    kept: bool = False
 
 
 def _local(value: datetime | None) -> datetime | None:
@@ -93,6 +107,7 @@ AREA_SENSORS: tuple[AreaSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda a: a.climate.co2,
         exists_fn=lambda a: a.climate.co2 is not None or a.climate.target_co2 is not None,
+        kept=True,
     ),
     AreaSensorDescription(
         key="intake_temperature",
@@ -144,6 +159,7 @@ AREA_SENSORS: tuple[AreaSensorDescription, ...] = (
         native_unit_of_measurement=CONCENTRATION_PARTS_PER_MILLION,
         value_fn=lambda a: a.climate.target_co2,
         exists_fn=lambda a: a.climate.co2 is not None or a.climate.target_co2 is not None,
+        kept=True,
     ),
     AreaSensorDescription(
         key="status",
@@ -250,6 +266,22 @@ AREA_SENSORS: tuple[AreaSensorDescription, ...] = (
         exists_fn=lambda a: a.irrigation is not None,
     ),
     AreaSensorDescription(
+        key="open_problems",
+        translation_key="open_problems",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda a: sum(p.open_inspections for p in a.plantings),
+        exists_fn=lambda a: bool(a.plantings),
+    ),
+    AreaSensorDescription(
+        key="light_hours",
+        translation_key="light_hours",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.HOURS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda a: a.phase.values.light_hours if a.phase and a.phase.values else None,
+        exists_fn=lambda a: a.phase is not None and a.phase.values is not None,
+    ),
+    AreaSensorDescription(
         key="tank_volume",
         translation_key="tank_volume",
         device_class=SensorDeviceClass.VOLUME_STORAGE,
@@ -297,11 +329,13 @@ async def async_setup_entry(
 ) -> None:
     """Set up the sensors."""
     coordinator = entry.runtime_data
-    async_add_entities(
+    add_entities(
+        coordinator,
+        async_add_entities,
         [
             BoardLastSeenSensor(coordinator),
             BoardSyncPendingSensor(coordinator),
-        ]
+        ],
     )
     add_entities_dynamically(
         entry,
@@ -309,16 +343,31 @@ async def async_setup_entry(
         lambda: [sensor_id for sensor_id, sensor in coordinator.data.sensors.items() if not sensor.hidden],
         lambda sensor_id: [BoardSensor(coordinator, coordinator.data.sensors[sensor_id])],
     )
-    add_entities_dynamically(
-        entry,
-        async_add_entities,
-        lambda: coordinator.data.areas,
-        lambda area_id: [
-            AreaSensor(coordinator, coordinator.data.areas[area_id], description)
-            for description in AREA_SENSORS
-            if description.exists_fn(coordinator.data.areas[area_id])
-        ],
-    )
+
+    def build_area(area_id: str) -> list[SensorEntity]:
+        area = coordinator.data.areas[area_id]
+        # a value that comes and goes with its reading (CO2) keeps its entity while the area exists
+        coordinator.provided.update(f"{area_id}_{d.key}" for d in AREA_SENSORS if d.kept)
+        return [AreaSensor(coordinator, area, d) for d in AREA_SENSORS if d.exists_fn(area)]
+
+    add_entities_dynamically(entry, async_add_entities, lambda: coordinator.data.areas, build_area)
+
+    def plants() -> list[str]:
+        # by plant: a plant moved to another area keeps its device and entities
+        return [
+            plant.id
+            for area in coordinator.data.areas.values()
+            for planting in area.plantings
+            for plant in planting.plants
+        ]
+
+    def build_plant(plant_id: str) -> list[SensorEntity]:
+        for area in coordinator.data.areas.values():
+            if (found := area.plant(plant_id)) is not None:
+                return [PlantSensor(coordinator, area, found[1], description) for description in PLANT_SENSORS]
+        return []
+
+    add_entities_dynamically(entry, async_add_entities, plants, build_plant)
 
 
 class BoardLastSeenSensor(BoardEntity, SensorEntity):
@@ -385,8 +434,11 @@ class BoardSensor(MannitoEntity, SensorEntity):
 
     @property
     def native_value(self) -> float | None:
-        """Latest value."""
-        return self.coordinator.data.sensors[self.sensor_id].value
+        """Latest value; none when it is older than 15 minutes (probe unplugged, board lost it)."""
+        sensor = self.coordinator.data.sensors[self.sensor_id]
+        if sensor.value_at is not None and dt_util.utcnow() - sensor.value_at > STALE_AFTER:
+            return None
+        return sensor.value
 
 
 class AreaSensor(AreaEntity, SensorEntity):
@@ -403,3 +455,72 @@ class AreaSensor(AreaEntity, SensorEntity):
     def native_value(self) -> float | int | str | datetime | None:
         """Current value."""
         return self.entity_description.value_fn(self.area)
+
+
+@dataclass(frozen=True, kw_only=True)
+class PlantSensorDescription(SensorEntityDescription):
+    """A value of a single plant."""
+
+    value_fn: Callable[[Planting, Plant], float | int | str | datetime | None]
+
+
+PLANT_SENSORS: tuple[PlantSensorDescription, ...] = (
+    PlantSensorDescription(
+        key="height",
+        translation_key="plant_height",
+        device_class=SensorDeviceClass.DISTANCE,
+        native_unit_of_measurement=UnitOfLength.MILLIMETERS,
+        suggested_unit_of_measurement=UnitOfLength.CENTIMETERS,
+        suggested_display_precision=0,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda planting, plant: plant.height_mm,
+    ),
+    PlantSensorDescription(
+        key="measured",
+        translation_key="plant_measured",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda planting, plant: plant.height_at,
+    ),
+    PlantSensorDescription(
+        key="age",
+        translation_key="plant_age",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.DAYS,
+        value_fn=lambda planting, plant: planting.days,
+    ),
+    PlantSensorDescription(
+        key="variety",
+        translation_key="plant_variety",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda planting, plant: planting.variety or None,
+    ),
+    PlantSensorDescription(
+        key="location",
+        translation_key="plant_location",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda planting, plant: (
+            " · ".join(part for part in (plant.section, f"#{plant.site}" if plant.site is not None else None) if part)
+            or None
+        ),
+    ),
+)
+
+
+class PlantSensor(PlantEntity, SensorEntity):
+    """A value of a single plant."""
+
+    entity_description: PlantSensorDescription
+
+    def __init__(
+        self, coordinator: MannitoCoordinator, area: Area, plant: Plant, description: PlantSensorDescription
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, area, plant, description.key)
+        self.entity_description = description
+
+    @property
+    def native_value(self) -> float | int | str | datetime | None:
+        """Current value."""
+        found = self.found
+        return self.entity_description.value_fn(*found) if found else None

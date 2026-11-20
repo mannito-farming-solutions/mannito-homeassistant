@@ -10,7 +10,7 @@
  * mannito/area and changes them through the normal actions of Home Assistant.
  */
 
-const CARD_VERSION = "0.2.0";
+const CARD_VERSION = "0.3.0";
 
 const TEXTS = {
   de: {
@@ -79,6 +79,29 @@ const TEXTS = {
     upToDate: "aktuell",
     noConfigure: "Einstellungen brauchen einen Token mit dem Recht „Konfigurieren“.",
     status: { ok: "In Ordnung", attention: "Achtung", problem: "Problem", neutral: "Pausiert", nodata: "Keine Werte" },
+    plants: "Pflanzen",
+    age: "Tag {n}",
+    height: "Höhe",
+    measuredAgo: "gemessen {t}",
+    notMeasured: "noch nicht gemessen",
+    heightCm: "Höhe cm",
+    save: "Speichern",
+    note: "Beobachtung …",
+    problemToggle: "Problem",
+    conditions: { perfect: "Perfekt", acceptable: "In Ordnung", warning: "Warnung", total_fail: "Ausfall" },
+    saved: "Gespeichert.",
+    openProblems: "{n} offene Probleme",
+    openProblem: "1 offenes Problem",
+    noPlants: "In diesem Bereich stehen keine Pflanzen.",
+    liters: "Liter",
+    topUp: "Nachgefüllt",
+    fresh: "Frisch angemischt",
+    levelCheck: "Füllstand",
+    tankConfirm: "{kind}: {l} l eintragen?",
+    targets: "Sollwerte der Phase",
+    targetsHint: "Gilt für die laufende Phase; die Zeitpläne folgen sofort.",
+    fieldCapacityNow: "Feldkapazität jetzt messen",
+    fieldCapacityConfirm: "Den aktuellen Wert der Sonde als Feldkapazität speichern? (Topf durchnässt und 30-60 min abgetropft)",
     p1: "P1 · Auffüllen",
     p2: "P2 · Halten",
     p3: "P3 · Nacht",
@@ -97,6 +120,15 @@ const TEXTS = {
       fallback_interval: "Abstand ohne Sonde",
       max_day_shots: "Shots / Tag max.",
       max_day_ml: "ml / Topf und Tag max.",
+      day_temperature: "Tag-Temperatur",
+      night_temperature: "Nacht-Temperatur",
+      day_vpd: "VPD Tag",
+      night_vpd: "VPD Nacht",
+      day_humidity: "Luftfeuchte Tag",
+      night_humidity: "Luftfeuchte Nacht",
+      light_intensity: "Lichtstärke",
+      co2_day: "CO₂ bei Licht",
+      circulation: "Umluft",
     },
   },
   en: {
@@ -165,6 +197,29 @@ const TEXTS = {
     upToDate: "up to date",
     noConfigure: "Settings need a token with the right to configure.",
     status: { ok: "OK", attention: "Attention", problem: "Problem", neutral: "Paused", nodata: "No data" },
+    plants: "Plants",
+    age: "Day {n}",
+    height: "Height",
+    measuredAgo: "measured {t}",
+    notMeasured: "not measured yet",
+    heightCm: "Height cm",
+    save: "Save",
+    note: "Observation …",
+    problemToggle: "Problem",
+    conditions: { perfect: "Perfect", acceptable: "Fine", warning: "Warning", total_fail: "Lost" },
+    saved: "Saved.",
+    openProblems: "{n} open problems",
+    openProblem: "1 open problem",
+    noPlants: "No plants stand in this area.",
+    liters: "Litres",
+    topUp: "Topped up",
+    fresh: "Mixed fresh",
+    levelCheck: "Level",
+    tankConfirm: "Enter {kind}: {l} l?",
+    targets: "Targets of the phase",
+    targetsHint: "Applies to the running phase; the schedules follow at once.",
+    fieldCapacityNow: "Measure field capacity now",
+    fieldCapacityConfirm: "Store the current probe reading as field capacity? (pot soaked and drained for 30-60 min)",
     p1: "P1 · Ramp",
     p2: "P2 · Maintain",
     p3: "P3 · Night",
@@ -183,9 +238,20 @@ const TEXTS = {
       fallback_interval: "Interval without probe",
       max_day_shots: "Shots / day max",
       max_day_ml: "ml / pot and day max",
+      day_temperature: "Day temperature",
+      night_temperature: "Night temperature",
+      day_vpd: "Day VPD",
+      night_vpd: "Night VPD",
+      day_humidity: "Day humidity",
+      night_humidity: "Night humidity",
+      light_intensity: "Light intensity",
+      co2_day: "CO₂ with light",
+      circulation: "Circulation",
     },
   },
 };
+
+const PHASE_KEYS = ["day_temperature", "night_temperature", "day_vpd", "night_vpd", "day_humidity", "night_humidity", "light_intensity", "co2_day", "circulation"];
 
 const NUMBER_KEYS = [
   "p1_start", "p1_shot", "p1_interval", "p1_max_shots", "p1_target", "p2_shot", "p2_dryback",
@@ -287,6 +353,7 @@ class MannitoCard extends HTMLElement {
       if (this._config.device !== device) return;
       this._info = info;
       this._error = null;
+      this._loadTimeline();
     } catch (err) {
       this._error = err?.message || String(err);
     } finally {
@@ -294,6 +361,47 @@ class MannitoCard extends HTMLElement {
     }
     this._built = false;
     this._render();
+  }
+
+  async _loadTimeline() {
+    const calendar = this._info?.entities?.grow_phases;
+    if (!calendar || !this._hass.callApi) return;
+    const start = new Date(Date.now() - 365 * 86400000).toISOString();
+    const end = new Date(Date.now() + 365 * 86400000).toISOString();
+    try {
+      const events = await this._hass.callApi("GET", `calendars/${calendar}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+      this._timeline = (events || []).map((e) => ({
+        name: e.summary,
+        start: new Date(e.start.dateTime || e.start.date),
+        end: new Date(e.end.dateTime || e.end.date),
+      }));
+    } catch (_err) {
+      this._timeline = [];
+    }
+    if (this._built) this._renderTimeline();
+  }
+
+  _renderTimeline() {
+    const el = this.shadowRoot.querySelector('[data-bind="timeline"]');
+    const spans = (this._timeline || []).filter((s) => s.end > s.start);
+    if (!el) return;
+    if (!spans.length) {
+      el.hidden = true;
+      return;
+    }
+    const first = Math.min(...spans.map((s) => s.start.getTime()));
+    const last = Math.max(...spans.map((s) => s.end.getTime()));
+    const now = Date.now();
+    const pct = (ms) => Math.max(0, Math.min(100, ((ms - first) / (last - first)) * 100));
+    const fmt = new Intl.DateTimeFormat(this._hass?.locale?.language || "de", { day: "2-digit", month: "2-digit" });
+    el.hidden = false;
+    el.innerHTML = `<div class="tl-bar">${spans
+      .map((s) => {
+        const state = s.end.getTime() <= now ? "done" : s.start.getTime() <= now ? "current" : "planned";
+        return `<div class="tl-seg ${state}" style="left:${pct(s.start.getTime())}%;width:${pct(s.end.getTime()) - pct(s.start.getTime())}%"
+                  title="${esc(s.name)} · ${fmt.format(s.start)} – ${fmt.format(s.end)}"><span>${esc(s.name)}</span></div>`;
+      })
+      .join("")}<div class="tl-now" style="left:${pct(now)}%"></div></div>`;
   }
 
   // ---------------------------------------------------------------------------------------------------------- helpers
@@ -375,12 +483,14 @@ class MannitoCard extends HTMLElement {
     this._built = true;
     this._bind();
     this._update();
+    this._renderTimeline();
   }
 
   _skeleton() {
     const t = this._t;
     const info = this._info;
     const tabs = [["overview", t.overview, "mdi:view-dashboard-outline"], ["devices", t.devices, "mdi:tune-vertical"]];
+    if ((info.plants || []).length) tabs.splice(1, 0, ["plants", t.plants, "mdi:sprout-outline"]);
     if (info.can_configure) tabs.push(["settings", t.settings, "mdi:cog-outline"]);
     return `
       <div class="header">
@@ -399,6 +509,7 @@ class MannitoCard extends HTMLElement {
         ${tabs.map(([id, label, icon]) => `<button class="tab ${this._tab === id ? "active" : ""}" data-tab="${id}"><ha-icon icon="${icon}"></ha-icon><span>${esc(label)}</span></button>`).join("")}
       </div>
       <div class="pane" data-pane="overview" ${this._tab === "overview" ? "" : "hidden"}>${this._overviewSkeleton()}</div>
+      ${(info.plants || []).length ? `<div class="pane" data-pane="plants" ${this._tab === "plants" ? "" : "hidden"}>${this._plantsSkeleton()}</div>` : ""}
       <div class="pane" data-pane="devices" ${this._tab === "devices" ? "" : "hidden"}>${this._devicesSkeleton()}</div>
       ${info.can_configure ? `<div class="pane" data-pane="settings" ${this._tab === "settings" ? "" : "hidden"}>${this._settingsSkeleton()}</div>` : ""}
     `;
@@ -417,6 +528,7 @@ class MannitoCard extends HTMLElement {
     const hasIrrigation = Boolean(this._info.entities.substrate_moisture);
     const hasTank = Boolean(this._info.entities.tank_volume);
     return `
+      <div class="timeline" data-bind="timeline" hidden></div>
       <div class="section-title">${esc(t.climate)}</div>
       <div class="tiles">${tiles.join("")}</div>
       ${hasIrrigation ? `
@@ -440,12 +552,52 @@ class MannitoCard extends HTMLElement {
       </div>` : ""}
       ${hasTank ? `
       <div class="section-title row-between"><span>${esc(t.tank)}</span><span class="muted" data-bind="tank-text"></span></div>
-      <div class="bar tank" data-more-id="tank_volume"><div class="bar-fill" data-bind="tank-fill"></div></div>` : ""}
+      <div class="bar tank" data-more-id="tank_volume"><div class="bar-fill" data-bind="tank-fill"></div></div>
+      ${this._info.can_control ? `
+      <div class="inline tank-book">
+        <input type="number" min="0" max="1000" step="0.5" value="1" data-tank-liters aria-label="${esc(t.liters)}"><span class="unit">l</span>
+        <button class="btn small ghost" data-tank="top_up">${esc(t.topUp)}</button>
+        <button class="btn small ghost" data-tank="fresh">${esc(t.fresh)}</button>
+        <button class="btn small ghost" data-tank="level_check">${esc(t.levelCheck)}</button>
+      </div>` : ""}` : ""}
       ${hasIrrigation && this._info.can_control ? `
       <div class="actions">
         <button class="btn" data-action="run-valves"><ha-icon icon="mdi:sprinkler-variant"></ha-icon>${esc(this._text(t.runValves, { n: VALVE_SECONDS }))}</button>
       </div>` : ""}
     `;
+  }
+
+  _plantsSkeleton() {
+    const t = this._t;
+    const plants = this._info.plants || [];
+    if (!plants.length) return `<div class="empty small">${esc(t.noPlants)}</div>`;
+    const canRecord = this._info.can_control;
+    const conditions = Object.entries(t.conditions).map(([k, v]) => `<option value="${k}" ${k === "acceptable" ? "selected" : ""}>${esc(v)}</option>`).join("");
+    return `
+      <div class="muted small hint" data-bind="problems"></div>
+      <div class="plants">${plants
+        .map(
+          (p) => `
+        <div class="plant" data-plant="${p.plant_id}">
+          <div class="plant-head">
+            <ha-icon icon="mdi:cannabis"></ha-icon>
+            <div class="plant-title"><div class="plant-name">${esc(p.name)}</div><div class="muted small">${esc(p.variety || "")}${p.days != null ? ` · ${esc(this._text(t.age, { n: p.days }))}` : ""}</div></div>
+            <button class="plant-height" data-plant-more="${p.plant_id}"><span class="big" data-bind="ph-${p.plant_id}">–</span><span class="muted small" data-bind="pm-${p.plant_id}"></span></button>
+          </div>
+          ${canRecord && p.device_id ? `
+          <div class="inline plant-actions">
+            <input type="number" min="0" max="1000" step="0.5" placeholder="${esc(t.heightCm)}" data-height="${p.plant_id}" aria-label="${esc(t.heightCm)}">
+            <button class="btn small" data-save-height="${p.plant_id}"><ha-icon icon="mdi:ruler"></ha-icon>${esc(t.save)}</button>
+          </div>
+          <input type="text" maxlength="1000" placeholder="${esc(t.note)}" data-note="${p.plant_id}" class="note-input" aria-label="${esc(t.note)}">
+          <div class="inline plant-actions">
+            <select data-condition="${p.plant_id}" aria-label="${esc(t.note)}">${conditions}</select>
+            <label class="check"><input type="checkbox" data-problem="${p.plant_id}">${esc(t.problemToggle)}</label>
+            <button class="btn small ghost push" data-save-note="${p.plant_id}"><ha-icon icon="mdi:note-edit-outline"></ha-icon>${esc(t.save)}</button>
+          </div>` : ""}
+        </div>`,
+        )
+        .join("")}</div>`;
   }
 
   _visibleOutputs() {
@@ -496,6 +648,9 @@ class MannitoCard extends HTMLElement {
     const e = this._info.entities;
     const select = (key, label) =>
       e[key] ? `<label class="field"><span>${esc(label)}</span><select data-select="${key}"></select></label>` : "";
+    const phaseNumbers = PHASE_KEYS.filter((k) => e[k]).map(
+      (k) => `<label class="field num"><span>${esc(t.numbers[k])}</span><div class="num-wrap"><input type="number" data-number="${k}"><span class="unit" data-bind="u-${k}"></span></div></label>`,
+    );
     const numbers = NUMBER_KEYS.filter((k) => e[k]).map(
       (k) => `<label class="field num"><span>${esc(t.numbers[k])}</span><div class="num-wrap"><input type="number" data-number="${k}"><span class="unit" data-bind="u-${k}"></span></div></label>`,
     );
@@ -507,10 +662,16 @@ class MannitoCard extends HTMLElement {
         ${select("irrigation_mode", t.irrigationMode)}
         ${select("dryback_strategy", t.strategy)}
       </div>
+      ${phaseNumbers.length || e.lights_on ? `<div class="section-title">${esc(t.targets)}</div><div class="muted small hint">${esc(t.targetsHint)}</div>
+      <div class="settings-grid">
+        ${e.lights_on ? `<label class="field"><span>${esc(t.lightsOn)}</span><input type="time" data-time="lights_on"></label>` : ""}
+        ${phaseNumbers.join("")}
+      </div>` : ""}
       ${numbers.length ? `<div class="section-title">${esc(t.drybackValues)}</div><div class="muted small hint">${esc(t.customHint)}</div><div class="settings-grid">${numbers.join("")}</div>` : ""}
+      ${e.field_capacity_now ? `<div class="actions"><button class="btn ghost" data-action="field-capacity"><ha-icon icon="mdi:water-check"></ha-icon>${esc(t.fieldCapacityNow)}</button></div>` : ""}
       <div class="section-title">${esc(t.growCycle)}</div>
       <div class="settings-grid">
-        <label class="field"><span>${esc(t.lightsOn)}</span><div class="inline"><input type="time" data-lights-on><button class="btn small" data-action="lights-on">${esc(t.set)}</button></div></label>
+        ${e.lights_on ? "" : `<label class="field"><span>${esc(t.lightsOn)}</span><div class="inline"><input type="time" data-lights-on><button class="btn small" data-action="lights-on">${esc(t.set)}</button></div></label>`}
         <label class="field"><span>${esc(t.postpone)}</span><div class="inline"><input type="number" min="1" max="14" value="1" data-postpone-days><span class="unit">${esc(t.days)}</span><button class="btn small" data-action="postpone">${esc(t.postpone)}</button></div></label>
       </div>
       <div class="actions">
@@ -578,6 +739,47 @@ class MannitoCard extends HTMLElement {
         this._call("number", "set_value", { value: Number(el.value) }, { entity_id: this._info.entities[el.dataset.number] });
       }),
     );
+    root.querySelector('[data-time="lights_on"]')?.addEventListener("change", (ev) => {
+      if (ev.target.value) this._call("time", "set_value", { time: `${ev.target.value}:00` }, { entity_id: this._info.entities.lights_on });
+    });
+    root.querySelectorAll("[data-tank]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const liters = Number(root.querySelector("[data-tank-liters]").value);
+        if (!(liters >= 0)) return;
+        const label = { top_up: t.topUp, fresh: t.fresh, level_check: t.levelCheck }[el.dataset.tank];
+        if (confirm(this._text(t.tankConfirm, { kind: label, l: liters }))) {
+          this._call("mannito", "tank_entry", { area: this._config.device, kind: el.dataset.tank, liters });
+        }
+      }),
+    );
+    const plant = (id) => (this._info.plants || []).find((p) => p.plant_id === id);
+    root.querySelectorAll("[data-plant-more]").forEach((el) =>
+      el.addEventListener("click", () => this._moreInfo(plant(el.dataset.plantMore)?.entities.height)),
+    );
+    root.querySelectorAll("[data-save-height]").forEach((el) =>
+      el.addEventListener("click", async () => {
+        const input = root.querySelector(`[data-height="${el.dataset.saveHeight}"]`);
+        const value = Number(input.value);
+        if (!input.value || !(value > 0)) return;
+        await this._call("mannito", "record_measurement", { target: plant(el.dataset.saveHeight).device_id, measurement: "height", value });
+        input.value = "";
+      }),
+    );
+    root.querySelectorAll("[data-save-note]").forEach((el) =>
+      el.addEventListener("click", async () => {
+        const id = el.dataset.saveNote;
+        const note = root.querySelector(`[data-note="${id}"]`);
+        const problem = root.querySelector(`[data-problem="${id}"]`);
+        await this._call("mannito", "record_note", {
+          target: plant(id).device_id,
+          condition: root.querySelector(`[data-condition="${id}"]`).value,
+          note: note.value || undefined,
+          problem: problem.checked,
+        });
+        note.value = "";
+        problem.checked = false;
+      }),
+    );
     root.querySelector("[data-area-control]")?.addEventListener("change", (ev) =>
       this._call("switch", ev.target.checked ? "turn_on" : "turn_off", {}, { entity_id: this._info.entities.control }),
     );
@@ -594,6 +796,9 @@ class MannitoCard extends HTMLElement {
       ev.preventDefault();
       const days = Number(root.querySelector("[data-postpone-days]").value || 1);
       this._call("mannito", "grow_cycle_action", { ...area, action: "postpone", days });
+    });
+    action("field-capacity", () => {
+      if (confirm(t.fieldCapacityConfirm)) this._call("button", "press", {}, { entity_id: this._info.entities.field_capacity_now });
     });
     action("next-phase", () => {
       if (confirm(t.nextPhaseConfirm)) this._call("mannito", "grow_cycle_action", { ...area, action: "next_phase_now" });
@@ -785,6 +990,18 @@ class MannitoCard extends HTMLElement {
       el.step = stateObj.attributes.step;
       el.value = BAD.has(stateObj.state) ? "" : stateObj.state;
     }
+    for (const p of this._info.plants || []) {
+      const height = p.entities.height ? this._hass.states[p.entities.height] : undefined;
+      this._set(`ph-${p.plant_id}`, this._fmt(height));
+      const measured = p.entities.measured ? this._hass.states[p.entities.measured]?.state : undefined;
+      const ago = this._relative(measured);
+      this._set(`pm-${p.plant_id}`, ago ? this._text(t.measuredAgo, { t: ago }) : t.notMeasured);
+    }
+    const problems = this._num("open_problems");
+    this._set("problems", problems ? (problems === 1 ? t.openProblem : this._text(t.openProblems, { n: problems })) : "");
+    const lightsOn = root.querySelector('[data-time="lights_on"]');
+    const lightsOnState = this._entity("lights_on")?.state;
+    if (lightsOn && lightsOn !== active && lightsOnState && !BAD.has(lightsOnState)) lightsOn.value = lightsOnState.slice(0, 5);
     const areaControl = root.querySelector("[data-area-control]");
     if (areaControl && areaControl !== active) areaControl.checked = this._entity("control")?.state === "on";
     const fwId = this._info.board_entities?.firmware;
@@ -903,6 +1120,33 @@ const STYLE = `<style>
   .num-wrap input { flex: 1; width: 100%; }
   .inline input[type=number] { width: 60px; }
   .unit { color: var(--secondary-text-color); white-space: nowrap; }
+  .timeline { margin: -2px 0 14px; }
+  .tl-bar { position: relative; height: 22px; border-radius: 6px; background: var(--m-soft); overflow: hidden; }
+  .tl-seg { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; padding: 0 6px; box-sizing: border-box; overflow: hidden;
+            border-right: 2px solid var(--card-background-color, #fff); font-size: .7em; white-space: nowrap; color: var(--secondary-text-color); }
+  .tl-seg.done { background: color-mix(in srgb, var(--m-ok) 18%, transparent); }
+  .tl-seg.current { background: color-mix(in srgb, var(--m-accent) 30%, transparent); color: var(--primary-text-color); font-weight: 600; }
+  .tl-seg.planned { background: color-mix(in srgb, var(--secondary-text-color) 10%, transparent); }
+  .tl-seg span { overflow: hidden; text-overflow: ellipsis; }
+  .tl-now { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--m-bad); }
+  .tank-book { margin-top: 8px; flex-wrap: wrap; }
+  .tank-book input { width: 70px; font: inherit; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--divider-color, rgba(127,127,127,.3));
+                     background: var(--card-background-color, #fff); color: var(--primary-text-color); }
+  .plants { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--m-gap); }
+  .plant { background: var(--m-soft); border-radius: var(--m-radius); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .plant-head { display: flex; align-items: center; gap: 10px; }
+  .plant-head > ha-icon { color: var(--m-ok); background: color-mix(in srgb, var(--m-ok) 15%, transparent); border-radius: 50%; padding: 6px; }
+  .plant-title { flex: 1; min-width: 0; }
+  .plant-name { font-weight: 600; }
+  .plant-height { all: unset; cursor: pointer; display: flex; flex-direction: column; align-items: flex-end; }
+  .plant-actions input, .plant-actions select { font: inherit; font-size: .9em; padding: 5px 8px; border-radius: 8px; min-width: 0;
+                                                border: 1px solid var(--divider-color, rgba(127,127,127,.3)); background: var(--card-background-color, #fff); color: var(--primary-text-color); }
+  .plant-actions input[type=number] { width: 90px; }
+  .note-input { font: inherit; font-size: .9em; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--divider-color, rgba(127,127,127,.3));
+                background: var(--card-background-color, #fff); color: var(--primary-text-color); width: 100%; box-sizing: border-box; }
+  .plant-actions .push { margin-left: auto; }
+  .plant-actions select { flex: 1; min-width: 100px; }
+  .check { display: inline-flex; align-items: center; gap: 4px; font-size: .8em; color: var(--secondary-text-color); white-space: nowrap; }
   @media (max-width: 480px) { .stats { grid-template-columns: repeat(2, 1fr); } .slider { width: 80px; } }
 </style>`;
 

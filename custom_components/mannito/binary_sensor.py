@@ -16,7 +16,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .api import Area, BusDevice, Device
 from .coordinator import MannitoConfigEntry, MannitoCoordinator
-from .entity import AreaEntity, BoardEntity, BusEntity, OutputEntity, add_entities_dynamically
+from .entity import AreaEntity, BoardEntity, BusEntity, OutputEntity, add_entities, add_entities_dynamically
 
 PARALLEL_UPDATES = 0
 
@@ -58,7 +58,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up the binary sensors."""
     coordinator = entry.runtime_data
-    async_add_entities([BoardOnlineSensor(coordinator)])
+    add_entities(coordinator, async_add_entities, [BoardOnlineSensor(coordinator)])
     add_entities_dynamically(
         entry,
         async_add_entities,

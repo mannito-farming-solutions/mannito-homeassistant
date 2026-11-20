@@ -25,7 +25,7 @@
       },
       "reconfigure": {
         "title": "Cloud-Adresse oder Token ändern",
-        "description": "Der Token muss zur selben Platine gehören.",
+        "description": "Der Token muss zur selben Platine gehören. Ein neuer Token ersetzt den alten; der alte wird danach in der Mannito-Cloud widerrufen.",
         "data": {
           "url": "Cloud-Adresse",
           "api_token": "API-Token"
@@ -69,6 +69,19 @@
     "button": {
       "automatic": {
         "name": "{name} Automatik"
+      },
+      "field_capacity": {
+        "name": "Feldkapazität aus aktuellem Wert"
+      }
+    },
+    "calendar": {
+      "grow_phases": {
+        "name": "Wachstumsphasen"
+      }
+    },
+    "time": {
+      "lights_on": {
+        "name": "Licht an"
       }
     },
     "number": {
@@ -110,6 +123,33 @@
       },
       "max_day_ml": {
         "name": "Wasser pro Topf und Tag höchstens"
+      },
+      "day_temperature": {
+        "name": "Tag-Temperatur"
+      },
+      "night_temperature": {
+        "name": "Nacht-Temperatur"
+      },
+      "day_vpd": {
+        "name": "VPD Tag"
+      },
+      "night_vpd": {
+        "name": "VPD Nacht"
+      },
+      "day_humidity": {
+        "name": "Luftfeuchte Tag"
+      },
+      "night_humidity": {
+        "name": "Luftfeuchte Nacht"
+      },
+      "light_intensity": {
+        "name": "Lichtstärke"
+      },
+      "co2_day": {
+        "name": "CO₂ bei Licht"
+      },
+      "circulation": {
+        "name": "Umluft"
       }
     },
     "select": {
@@ -227,6 +267,27 @@
       },
       "sync_pending": {
         "name": "Offene Änderungen"
+      },
+      "open_problems": {
+        "name": "Offene Probleme"
+      },
+      "light_hours": {
+        "name": "Lichtstunden"
+      },
+      "plant_height": {
+        "name": "Höhe"
+      },
+      "plant_measured": {
+        "name": "Zuletzt gemessen"
+      },
+      "plant_age": {
+        "name": "Alter"
+      },
+      "plant_variety": {
+        "name": "Sorte"
+      },
+      "plant_location": {
+        "name": "Standort"
       }
     },
     "switch": {
@@ -267,9 +328,44 @@
     },
     "use_co2_required": {
       "message": "Wähle, ob CO₂ dosiert wird."
+    },
+    "plant_gone": {
+      "message": "Die Pflanze steht in keinem Grow-Bereich der Platine mehr (geerntet oder umgezogen)."
+    },
+    "choose_plant": {
+      "message": "Dieser Grow-Bereich hat mehrere oder keine Pflanzungen: wähle eine Pflanze."
+    },
+    "not_a_plant": {
+      "message": "Wähle eine Pflanze oder einen Grow-Bereich einer Mannito-Platine."
     }
   },
   "selector": {
+    "measurement": {
+      "options": {
+        "height": "Höhe (cm)",
+        "stem_thickness": "Stammdicke (mm)",
+        "leaf_size": "Blattgröße",
+        "plant_weight": "Pflanzengewicht (g)",
+        "optic": "Optik (1-10)",
+        "color": "Farbe (1-10)"
+      }
+    },
+    "condition": {
+      "options": {
+        "perfect": "Perfekt",
+        "acceptable": "In Ordnung",
+        "warning": "Warnung",
+        "total_fail": "Ausfall"
+      }
+    },
+    "tank_kind": {
+      "options": {
+        "fresh": "Frisch angemischt (genau die Liter)",
+        "top_up": "Nachgefüllt (Liter dazu)",
+        "withdrawal": "Entnommen (Liter)",
+        "level_check": "Füllstand geprüft (Liter drin)"
+      }
+    },
     "grow_cycle_action": {
       "options": {
         "confirm_phase": "Phase bestätigen (Ernte oder Trocknung fertig)",
@@ -306,6 +402,94 @@
         "ml_per_pot": {
           "name": "ml pro Topf",
           "description": "Test-Shot: Wasser pro Topf (1-1000)."
+        }
+      }
+    },
+    "record_measurement": {
+      "name": "Messung eintragen",
+      "description": "Trägt eine Messung einer Pflanze ein, zum Beispiel ihre Höhe. Bei einem Grow-Bereich mit nur einer Pflanzung gilt sie für alle Pflanzen.",
+      "fields": {
+        "target": {
+          "name": "Pflanze",
+          "description": "Die Pflanze (Gerät) oder ein Grow-Bereich mit nur einer Pflanzung."
+        },
+        "measurement": {
+          "name": "Messung",
+          "description": "Was gemessen wurde."
+        },
+        "value": {
+          "name": "Wert",
+          "description": "Der Wert in der Einheit der Messung (Höhe in cm)."
+        },
+        "note": {
+          "name": "Notiz",
+          "description": "Optionale Notiz."
+        }
+      }
+    },
+    "record_note": {
+      "name": "Beobachtung eintragen",
+      "description": "Trägt ein, was an einer Pflanze zu sehen war; als Problem bleibt es offen, bis es in der Cloud gelöst ist.",
+      "fields": {
+        "target": {
+          "name": "Pflanze",
+          "description": "Die Pflanze (Gerät) oder ein Grow-Bereich mit nur einer Pflanzung."
+        },
+        "condition": {
+          "name": "Zustand",
+          "description": "Wie die Pflanze aussieht."
+        },
+        "note": {
+          "name": "Notiz",
+          "description": "Optionale Notiz."
+        },
+        "problem": {
+          "name": "Problem",
+          "description": "Bleibt offen, bis es gelöst ist."
+        }
+      }
+    },
+    "tank_entry": {
+      "name": "Tankbuch",
+      "description": "Trägt ein, was mit dem Tank eines Grow-Bereichs passiert ist: frisch angemischt, nachgefüllt, entnommen oder Füllstand geprüft. Die Cloud rechnet daraus den Füllstand.",
+      "fields": {
+        "area": {
+          "name": "Grow-Bereich",
+          "description": "Der Grow-Bereich, dessen Tank gemeint ist."
+        },
+        "kind": {
+          "name": "Was passiert ist",
+          "description": "Frisch angemischt, nachgefüllt, entnommen oder Füllstand geprüft."
+        },
+        "liters": {
+          "name": "Liter",
+          "description": "Liter (siehe „Was passiert ist“)."
+        },
+        "note": {
+          "name": "Notiz",
+          "description": "Optionale Notiz."
+        }
+      }
+    },
+    "tank_reading": {
+      "name": "Tankmessung",
+      "description": "Trägt EC, pH oder Temperatur ein, gemessen im Tank eines Grow-Bereichs.",
+      "fields": {
+        "area": {
+          "name": "Grow-Bereich",
+          "description": "Der Grow-Bereich, dessen Tank gemeint ist."
+        },
+        "ec": {
+          "name": "EC",
+          "description": "EC in mS/cm."
+        },
+        "ph": {
+          "name": "pH",
+          "description": "pH-Wert."
+        },
+        "temperature": {
+          "name": "Temperatur",
+          "description": "Wassertemperatur in °C."
         }
       }
     },

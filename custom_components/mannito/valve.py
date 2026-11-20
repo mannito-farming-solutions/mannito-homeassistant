@@ -54,12 +54,8 @@ class MannitoValve(OutputEntity, ValveEntity):
     async def async_open_for(self, duration: int) -> None:
         """Open the valve for 1-60 seconds."""
         limit = min(self.output.max_on_seconds or MAX_VALVE_SECONDS, MAX_VALVE_SECONDS)
-        await self.async_command(
-            self.coordinator.client.async_set_device_state(
-                self.device_id, True, duration_seconds=max(1, min(int(duration), limit))
-            )
-        )
+        await self.async_switch(True, duration_seconds=max(1, min(int(duration), limit)))
 
     async def async_close_valve(self) -> None:
         """Close the valve."""
-        await self.async_command(self.coordinator.client.async_set_device_state(self.device_id, False))
+        await self.async_switch(False)

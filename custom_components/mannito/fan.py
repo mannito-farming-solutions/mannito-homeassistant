@@ -58,19 +58,15 @@ class MannitoFan(OutputEntity, FanEntity):
     async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs: Any) -> None:
         """Switch the fan on (by hand: it leaves the automatic control)."""
         power = max(1, percentage) if percentage and self.output.dimmable else None
-        await self.async_command(
-            self.coordinator.client.async_set_device_state(self.device_id, True, power_percent=power)
-        )
+        await self.async_switch(True, power_percent=power)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Switch the fan off (by hand)."""
-        await self.async_command(self.coordinator.client.async_set_device_state(self.device_id, False))
+        await self.async_switch(False)
 
     async def async_set_percentage(self, percentage: int) -> None:
         """Set the speed; 0 switches off."""
         if percentage == 0:
-            await self.async_command(self.coordinator.client.async_set_device_state(self.device_id, False))
+            await self.async_switch(False)
         else:
-            await self.async_command(
-                self.coordinator.client.async_set_device_state(self.device_id, True, power_percent=percentage)
-            )
+            await self.async_switch(True, power_percent=percentage)

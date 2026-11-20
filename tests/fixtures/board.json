@@ -110,7 +110,9 @@
       "availableFirmware": null,
       "lastUpdate": null,
       "name": "Mannito VPD-Modul",
-      "sensors": ["150_TEMPERATURE1"],
+      "sensors": [
+        "150_TEMPERATURE1"
+      ],
       "state": "OK",
       "seenUniqueId": null,
       "errors": null
@@ -160,7 +162,51 @@
         "progress": "Tag 22 · Blütewoche 1",
         "next": "Blüte Woche 4–6 am 05.12.",
         "confirmRequired": false,
-        "canPostpone": true
+        "canPostpone": true,
+        "values": {
+          "dayTemperatureC": 25.0,
+          "nightTemperatureC": 23.0,
+          "dayVpdKpa": 1.15,
+          "nightVpdKpa": 0.95,
+          "dayHumidityPct": null,
+          "nightHumidityPct": null,
+          "lightIntensityPct": 100,
+          "lightHours": 12,
+          "lightsOn": "09:00",
+          "sunriseMinutes": 15,
+          "sunsetMinutes": 15,
+          "co2DayPpm": null,
+          "circulationPct": 60
+        },
+        "timeline": [
+          {
+            "name": "Wachstum",
+            "kind": "Vegetative",
+            "startUtc": "2026-10-28T08:00:00Z",
+            "endUtc": "2026-11-14T19:59:00Z",
+            "plannedDays": 25,
+            "current": false,
+            "done": true
+          },
+          {
+            "name": "Blüte Woche 1–3",
+            "kind": "FlowerEarly",
+            "startUtc": "2026-11-14T19:59:00Z",
+            "endUtc": "2026-12-05T08:00:00Z",
+            "plannedDays": 21,
+            "current": true,
+            "done": false
+          },
+          {
+            "name": "Blüte Woche 4–6",
+            "kind": "FlowerMid",
+            "startUtc": "2026-12-05T08:00:00Z",
+            "endUtc": "2026-12-26T08:00:00Z",
+            "plannedDays": 21,
+            "current": false,
+            "done": false
+          }
+        ]
       },
       "irrigation": {
         "mode": "Dryback",
@@ -212,7 +258,40 @@
         "capacityLiters": 10.0,
         "percent": 82
       },
-      "warnings": []
+      "warnings": [],
+      "plantings": [
+        {
+          "id": "44444444-0000-4000-8000-000000000001",
+          "variety": "Green Poison",
+          "plantCount": 2,
+          "startLocal": "2026-10-28T00:00:00",
+          "days": 23,
+          "measurements": 4,
+          "openInspections": 1,
+          "plants": [
+            {
+              "id": "55555555-0000-4000-8000-000000000001",
+              "number": 1,
+              "name": "#1",
+              "section": "Topf 1",
+              "site": 1,
+              "sinceLocal": "2026-10-28T00:00:00",
+              "heightMm": 350.0,
+              "heightAtUtc": "2026-11-19T07:30:00Z"
+            },
+            {
+              "id": "55555555-0000-4000-8000-000000000003",
+              "number": 3,
+              "name": "#3",
+              "section": "Topf 3",
+              "site": 1,
+              "sinceLocal": "2026-10-28T00:00:00",
+              "heightMm": 370.0,
+              "heightAtUtc": "2026-11-19T07:30:00Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
