@@ -121,7 +121,7 @@ The integration ships a dashboard card and loads it for you; there is no resourc
 
 | Tab | Content |
 | --- | --- |
-| Overview | Phase timeline with today marked, climate against targets, substrate moisture on a scale with peak, field capacity, P2 trigger and emergency line, shots and water today, tank level, quick tank entries, a button to run the valves for 10 s |
+| Overview | Phase timeline with today marked, climate against targets, the lamp level now against the phase target, substrate moisture on a scale with peak, field capacity, P2 trigger and emergency line, shots and water today, tank level, quick tank entries, a button to run the valves for 10 s |
 | Plants | Each plant with height, age and last measurement. Record a height or an observation, optionally as a problem. |
 | Devices | The devices of the area with a slider (dimmable lamp, fans), a switch, or **Open 10 s** for valves. A **Manual** badge and an automatic button per device. |
 | Settings | Phase targets, lights-on time, control, climate control, irrigation, dryback strategy and values, field capacity, grow cycle (postpone, next phase, confirm phase), board firmware |

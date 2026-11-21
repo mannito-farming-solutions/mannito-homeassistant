@@ -10,7 +10,7 @@
  * mannito/area and changes them through the normal actions of Home Assistant.
  */
 
-const CARD_VERSION = "0.3.0";
+const CARD_VERSION = "0.3.1";
 
 const TEXTS = {
   de: {
@@ -30,6 +30,9 @@ const TEXTS = {
     co2: "CO₂",
     leaf: "Blatt",
     intake: "Zuluft",
+    lamp: "Lampe",
+    lampOn: "An",
+    lampOff: "Aus",
     target: "Soll",
     day: "Tag",
     night: "Nacht",
@@ -150,6 +153,9 @@ const TEXTS = {
     co2: "CO₂",
     leaf: "Leaf",
     intake: "Intake",
+    lamp: "Lamp",
+    lampOn: "On",
+    lampOff: "Off",
     target: "Target",
     day: "Day",
     night: "Night",
@@ -355,6 +361,24 @@ class MannitoCard extends HTMLElement {
     return MannitoCard.texts(this._hass);
   }
 
+  /** The lamp now: known (has a state), on, and the level it shines at (dimmable, ramps included); null without a lamp. */
+  _lampState() {
+    const lamp = this._lamp();
+    if (!lamp) return null;
+    const control = lamp.entities.control ? this._hass.states[lamp.entities.control] : undefined;
+    const stateObj = control || (lamp.entities.on ? this._hass.states[lamp.entities.on] : undefined);
+    if (!stateObj || BAD.has(stateObj.state)) return { known: false, on: false, level: null };
+    const brightness = control?.attributes?.brightness;
+    const level = lamp.dimmable && brightness !== undefined && brightness !== null ? Math.round((brightness / 255) * 100) : null;
+    return { known: true, on: stateObj.state === "on", level };
+  }
+
+  /** The lamp of the grow area: the one assigned to it, else the only lamp of the board. */
+  _lamp() {
+    const lamps = (this._info?.outputs || []).filter((o) => o.type === "light" || o.type === "dimmer");
+    return lamps.find((o) => o.assigned) || (lamps.length === 1 ? lamps[0] : null);
+  }
+
   async _load() {
     const device = this._config.device;
     this._loadingFor = device;
@@ -535,6 +559,15 @@ class MannitoCard extends HTMLElement {
         ${c.target ? `<div class="tile-target" data-bind="t-${c.key}"></div><div class="dev"><div class="dev-mid"></div><div class="dev-dot" data-bind="d-${c.key}"></div></div>` : `<div class="tile-target" data-bind="s-${c.key}"></div>`}
       </button>`,
     );
+    const lamp = this._lamp();
+    if (lamp) {
+      tiles.push(`
+      <button class="tile" data-more-device="${lamp.device_id}">
+        <div class="tile-head"><ha-icon icon="mdi:lightbulb-on-outline"></ha-icon><span>${esc(t.lamp)}</span></div>
+        <div class="tile-value" data-bind="lamp-v">–</div>
+        <div class="tile-target" data-bind="lamp-t"></div>
+      </button>`);
+    }
     const hasIrrigation = Boolean(this._info.entities.substrate_moisture);
     const hasTank = Boolean(this._info.entities.tank_volume);
     return `
@@ -859,9 +892,13 @@ class MannitoCard extends HTMLElement {
       banner.textContent = headline && !BAD.has(headline.state) ? headline.state : t.emergencyMode;
     }
     const isDay = this._entity("day")?.state === "on";
+    const lamp = this._lampState();
+    const lampText = lamp && lamp.known ? (!lamp.on ? t.lampOff : lamp.level !== null ? `${lamp.level} %` : t.lampOn) : "–";
     const lightEl = root.querySelector('[data-bind="light"]');
     if (lightEl) {
-      lightEl.innerHTML = `<ha-icon icon="${isDay ? "mdi:white-balance-sunny" : "mdi:weather-night"}"></ha-icon><span>${esc(isDay ? t.day : t.night)}</span>`;
+      // the lamp level next to day / night; at night only while the lamp is on
+      const lampPart = lamp && lamp.known && (isDay || lamp.on) ? `<span class="lamp-level">· ${esc(t.lamp)} ${esc(lampText)}</span>` : "";
+      lightEl.innerHTML = `<ha-icon icon="${isDay ? "mdi:white-balance-sunny" : "mdi:weather-night"}"></ha-icon><span>${esc(isDay ? t.day : t.night)}</span>${lampPart}`;
       lightEl.classList.toggle("is-day", isDay);
     }
 
@@ -888,6 +925,13 @@ class MannitoCard extends HTMLElement {
       } else if (c.second) {
         this._set(`s-${c.key}`, this._fmt(this._entity(c.second), ""));
       }
+    }
+
+    // lamp tile: the level it shines at now (ramps included) against the light intensity of the phase
+    if (lamp) {
+      this._set("lamp-v", lampText);
+      const target = this._num("light_intensity");
+      this._set("lamp-t", !isDay ? t.night : target === null ? "" : `${t.target} ${this._fmtNumber(target, 0)} %`);
     }
 
     // irrigation
