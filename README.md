@@ -255,3 +255,7 @@ All texts live in `script/translations.py`. After changing them, run
 
 Every push runs hassfest, the HACS checks and the tests. A release is a tag `vX.Y.Z` that matches `version` in
 `manifest.json`.
+
+## License
+
+MIT, see [LICENSE](LICENSE). The Mannito name and logo are not covered by this license.
