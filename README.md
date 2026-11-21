@@ -1,239 +1,257 @@
-# Mannito für Home Assistant
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="custom_components/mannito/brand/dark_logo.png">
+    <img alt="Mannito" src="custom_components/mannito/brand/logo.png" width="320">
+  </picture>
+</p>
 
-Diese Integration holt eine Mannito-Platine (Grow-Controller) über die Mannito-Cloud in Home Assistant. Du siehst die Sensoren,
-das Klima und die Bewässerung deiner Grow-Bereiche, schaltest Lampe, Lüfter, Steckdosen und Ventile und änderst Klimaregelung und
-Bewässerung. Die Platine regelt weiterhin selbst. Home Assistant liest mit und greift nur ein, wenn du es willst.
+# Mannito for Home Assistant
 
-## Voraussetzungen
+Connects a Mannito board (the grow controller) to Home Assistant through the Mannito cloud. You see the climate,
+irrigation and plants of each grow area, switch lights, fans, sockets and valves, and change climate control and
+irrigation settings. The board keeps regulating on its own. Home Assistant reads along and steps in only when you tell it
+to.
 
-- Home Assistant 2026.9 oder neuer
-- eine Mannito-Platine, die in der Mannito-Cloud eingerichtet ist
-- ein **API-Token** dieser Platine
+[![Open this repository in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mannito-farming-solutions&repository=mannito-homeassistant&category=integration)
 
-### API-Token erstellen
+## Requirements
 
-1. In der Mannito-Cloud die Seite der Platine öffnen.
-2. In der Karte **„API-Zugänge“** auf **„Token erstellen“** klicken. Nur Admins der Organisation sehen diese Karte.
-3. Einen Namen vergeben, zum Beispiel „Home Assistant“, und die Rechte wählen:
-   - **Lesen** ist immer dabei: alle Werte und Zustände.
-   - **Steuern**: Geräte von Hand schalten, zurück auf Automatik, Ventile kurz öffnen.
-   - **Konfigurieren**: Grow-Bereich an oder aus, Klimaregelung, Bewässerung, Wachstumsphase, Firmware der Platine.
-4. Den Token kopieren. Er beginnt mit `mnt_` und wird **nur einmal** angezeigt.
+- Home Assistant 2026.9 or newer
+- A Mannito board set up in the Mannito cloud
+- An API token for that board
 
-Ein Token gilt nur für **eine** Platine. Für andere Platinen und für die KI-Schnittstelle (MCP) taugt er nicht. In der Karte
-siehst du, wann ein Token zuletzt benutzt wurde, und kannst ihn jederzeit widerrufen.
+### Create an API token
 
-## Installation
+1. In the Mannito cloud, open the page of your board.
+2. In the **API-Zugänge** (API access) card, select **Token erstellen** (create token). Only organization admins see
+   this card.
+3. Give the token a name, for example `Home Assistant`, and pick its rights:
 
-### Manuell (solange das Repository privat ist)
+   | Right | What it allows |
+   | --- | --- |
+   | Read | Always included. All readings and states. |
+   | Control | Switch devices by hand, hand them back to automatic, open valves briefly, record measurements and tank entries. |
+   | Configure | Turn a grow area on or off, climate control, irrigation, phase targets, grow cycle, board firmware. |
 
-1. Den Ordner `custom_components/mannito` nach `config/custom_components/mannito` deiner Home-Assistant-Installation
-   kopieren, zum Beispiel mit dem File-Editor- oder Samba-Add-on.
-2. Home Assistant neu starten.
+4. Copy the token. It starts with `mnt_` and is shown only once.
 
-### Über HACS / Marketplace (sobald das Repository öffentlich ist)
+A token works for one board only. It does not work for other boards or for the Mannito MCP server. The card shows when
+each token was last used, and you can revoke a token there at any time.
 
-1. In HACS oder im Marketplace dieses Repository als benutzerdefiniertes Repository vom Typ „Integration“ hinzufügen.
-2. **Mannito** installieren und Home Assistant neu starten.
+## Install
 
-### Einrichten
+### HACS
 
-**Einstellungen → Geräte & Dienste → Integration hinzufügen → Mannito**, dann eingeben:
+1. Select the button above, or in HACS open the menu, choose **Custom repositories** and add
+   `https://github.com/mannito-farming-solutions/mannito-homeassistant` with the type **Integration**.
+2. Download **Mannito**. HACS offers the latest release; older releases are available under **Redownload**.
+3. Restart Home Assistant.
 
-| Feld | Bedeutung |
+### Manual
+
+1. Download the latest release and copy `custom_components/mannito` to `config/custom_components/mannito` of your Home
+   Assistant installation, for example with the File editor or Samba add-on.
+2. Restart Home Assistant.
+
+## Set up
+
+[![Add the Mannito integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=mannito)
+
+Go to **Settings > Devices & services > Add integration > Mannito** and enter:
+
+| Field | Value |
 | --- | --- |
-| Cloud-Adresse | Adresse der Mannito-Cloud, meist `https://mannito.de` |
-| API-Token | der Token der Platine (`mnt_…`) |
+| Cloud address | Address of the Mannito cloud, usually `https://mannito.de` |
+| API token | The token of the board (`mnt_...`) |
 
-Die Integration prüft den Token sofort. Jede Platine wird ein eigener Eintrag. Cloud-Adresse und Token lassen sich später über
-**„Neu konfigurieren“** ändern. Trägst du dort einen neuen Token ein, widerruft die Integration den alten in der Cloud. Wird ein
-Token widerrufen oder läuft er ab, fragt Home Assistant von selbst nach einem neuen.
+The token is checked right away. Each board becomes its own entry.
 
-## Was in Home Assistant erscheint
+To change the cloud address or the token later, use **Reconfigure** on the entry. A new token entered there replaces the
+old one, and the integration revokes the old token in the cloud. If a token is revoked or expires, Home Assistant asks
+for a new one.
 
-Die Platine ist ein Gerät. Darunter hängen je ein Gerät pro Grow-Bereich und pro Bus-Modul, zum Beispiel das VPD-Modul.
+## What you get
 
-**Platine**
-- Online-Status, letzter Kontakt, offene Änderungen
-- alle Sensoren der Platine und der Bus-Module mit ihrem Namen aus der Cloud
-- Ausgänge (mit dem Recht **Steuern**):
-  - Lampe als Licht, dimmbar mit 0–10-V-Kanal
-  - Lüfter mit Drehzahl in Prozent
-  - Steckdosen und Relais als Schalter
-  - Magnetventile als Ventil
-- je Ausgang eine Taste **„… Automatik“** (gibt ihn an die Regelung zurück) und ein Diagnose-Sensor **„… Handbetrieb“**
-- Firmware-Update der Platine; Installieren nur mit dem Recht **Konfigurieren**
+The board is a device. Each grow area, each plant and each bus module (for example the VPD module) is a device of its
+own below the board.
 
-**Grow-Bereich**
-- Klima: Temperatur, Luftfeuchte, VPD, Blatttemperatur, CO₂ (falls vorhanden), Zuluft, dazu die Sollwerte
-- Status (in Ordnung, Achtung, Problem …), Tag/Nacht, Notbetrieb
-- Wachstumsphase, Tag des Grows, Tag der Phase
-- Bewässerung: Phase P0–P3, Substratfeuchte, Tageshoch, Dryback, Shots und Wasser pro Topf heute, letzter und nächster Shot,
-  Feldkapazität, Tankinhalt und -füllstand
-- **Kalender „Wachstumsphasen“**: abgeschlossene, laufende und geplante Phasen des Grow-Zyklus
-- mit dem Recht **Konfigurieren**:
-  - **Sollwerte der laufenden Phase**: Tag-/Nacht-Temperatur, VPD Tag/Nacht (oder Luftfeuchte), Lichtstärke, Umluft, CO₂
-  - **Licht an** als Uhrzeit, der ganze Tag des Grow-Zyklus verschiebt sich mit
-  - Taste **„Feldkapazität aus aktuellem Wert“**, nach dem Durchnässen und Abtropfen drücken
-  - Schalter **„Regelung“**
-  - Auswahl **Klimaregelung** (Fuzzy, Fuzzy + PI, MPC), **Bewässerung** (Aus, Zeitplan, Dryback) und **Dryback-Steuerung**
-  - Zahlenfelder für alle Dryback-Werte und die Tageslimits
+**Board**
 
-**Pflanzen**: Jede Pflanze, die in einem Grow-Bereich steht, ist ein eigenes Gerät, zum Beispiel „Green Poison #3“. Sie hat:
-- **Höhe** (letzte Messung, in cm) und wann zuletzt gemessen wurde
-- **Alter** in Tagen, **Sorte**, **Standort** (Topf/Abschnitt und Platz)
+- Online status, last contact, pending changes
+- Every sensor of the board and its bus modules, with the name it has in the cloud
+- Outputs, with the Control right: the lamp as a light (dimmable on a 0-10 V channel), fans with speed in percent,
+  sockets and relays as switches, solenoid valves as valves
+- Per output a **... automatic** button, which hands it back to the board, and a **... manual operation** diagnostic
+  sensor
+- Board firmware as an update entity. Installing needs the Configure right.
 
-Der Grow-Bereich zeigt die Zahl der **offenen Probleme** seiner Pflanzungen.
+**Grow area**
 
-Schaltest du einen Ausgang, zeigt Home Assistant den neuen Zustand sofort an. Die Platine bestätigt ihn wenige Sekunden später.
+- Climate: temperature, humidity, VPD, leaf temperature, CO₂ (if measured), intake air, and their targets
+- Status (OK, attention, problem, paused), day or night, emergency mode
+- Grow phase, day of grow, day of phase, and a **Grow phases** calendar with past, current and planned phases
+- Irrigation: phase P0 to P3, substrate moisture and its daily peak, dryback, shots and water per pot today, last and
+  next shot, field capacity, tank volume and level
+- Open problems of the plantings
+- With the Configure right:
+  - Targets of the current phase: day and night temperature, day and night VPD (or humidity), light intensity,
+    circulation, CO₂
+  - **Lights on** as a time. The whole day of the grow cycle moves with it.
+  - **Field capacity from current reading**: press it after soaking the pot and letting it drain
+  - The **Control** switch, and selects for climate control (Fuzzy, Fuzzy + PI, MPC), irrigation (off, schedule,
+    dryback) and dryback strategy
+  - Number entities for every dryback value and the daily limits
 
-Neue Ausgänge, Sensoren, Grow-Bereiche, Pflanzen und Bus-Module erscheinen von selbst. Was du in der Cloud löschst oder ausblendest,
-verschwindet wieder, ebenso geerntete Pflanzen. Hat ein neuer Token weniger Rechte, entfernt die Integration die Schalter und
-Einstellungen, die er nicht mehr darf. Es bleiben keine Entitäten „nicht mehr verfügbar“ zurück.
+**Plant**
 
-## Die Mannito-Karte
+Every plant in a grow area is a device, for example `Green Poison #3`, with its height (last measurement, in cm), when
+it was last measured, its age in days, variety and location (pot or section and site).
 
-Die Integration bringt eine eigene Dashboard-Karte mit. Sie lädt automatisch, eine Ressource musst du nicht anlegen. Eine Karte
-zeigt einen Grow-Bereich auf drei Reitern:
+**Keeping in step with the cloud**
 
-- **Übersicht**
-  - Zeitachse der Wachstumsphasen mit „Heute“-Markierung
-  - Klima gegen Soll (Temperatur, Feuchte, VPD, CO₂) mit Abweichungsanzeige, Blatt und Zuluft
-  - Substratfeuchte auf einer Skala mit Tageshoch, Feldkapazität, P2-Auslöser und Notfall-Grenze
-  - Shots und Wasser heute, Dryback, nächster oder letzter Shot, Tankfüllstand
-  - Tankbuch mit einem Klick: nachgefüllt, frisch angemischt, Füllstand (Liter)
-  - Taste „Ventile 10 s“
-- **Pflanzen**
-  - jede Pflanze mit Höhe, Alter und wann zuletzt gemessen
-  - Höhe eintragen und Beobachtungen festhalten, wahlweise als Problem
-- **Geräte**
-  - die Geräte des Bereichs mit Schieber (dimmbare Lampe, Lüfter), Schalter oder „10 s öffnen“ (Ventile)
-  - Hinweis „Hand“ bei Handbetrieb und eine Automatik-Taste je Gerät
-- **Einstellungen**
-  - Sollwerte der Phase (Licht an, Temperaturen, VPD, Lichtstärke, Umluft)
-  - Regelung, Klimaregelung, Bewässerung, Dryback-Steuerung und alle Dryback-Werte, Feldkapazität messen
-  - Grow-Zyklus: Licht-an-Zeit, Verschieben, nächste Phase, Phase bestätigen
-  - Firmware der Platine
+When you switch an output, Home Assistant shows the new state at once; the board confirms it a few seconds later.
 
-So fügst du sie hinzu: Dashboard bearbeiten → **Karte hinzufügen → „Mannito Grow-Bereich“** und den Grow-Bereich wählen. In YAML:
+New outputs, sensors, grow areas, plants and bus modules appear on their own. What you delete or hide in the cloud
+disappears again, and so do harvested plants. If a new token has fewer rights, the integration removes the switches and
+settings it may no longer use. No entities are left behind as unavailable.
+
+## The Mannito card
+
+The integration ships a dashboard card and loads it for you; there is no resource to add. One card shows one grow area:
+
+| Tab | Content |
+| --- | --- |
+| Overview | Phase timeline with today marked, climate against targets, substrate moisture on a scale with peak, field capacity, P2 trigger and emergency line, shots and water today, tank level, quick tank entries, a button to run the valves for 10 s |
+| Plants | Each plant with height, age and last measurement. Record a height or an observation, optionally as a problem. |
+| Devices | The devices of the area with a slider (dimmable lamp, fans), a switch, or **Open 10 s** for valves. A **Manual** badge and an automatic button per device. |
+| Settings | Phase targets, lights-on time, control, climate control, irrigation, dryback strategy and values, field capacity, grow cycle (postpone, next phase, confirm phase), board firmware |
+
+To add it, edit a dashboard, choose **Add card > Mannito grow area** and pick the grow area. In YAML:
 
 ```yaml
 type: custom:mannito-card
-device: <Geräte-ID des Grow-Bereichs>
-show_all_devices: false   # true: auch Ausgänge der Platine, die dem Bereich nicht zugeordnet sind
+device: <device ID of the grow area>
+show_all_devices: false # true also shows board outputs not assigned to this area
 ```
 
-Was ein Token nicht darf, zeigt die Karte nicht an. Ohne das Recht **Konfigurieren** fehlt der Reiter „Einstellungen“. Ohne
-das Recht **Steuern** sind die Geräte nur zu sehen, nicht zu schalten.
+The card hides what the token may not do. Without the Configure right there is no Settings tab. Without the Control
+right the devices are shown but cannot be switched.
 
-## Aktionen
+The card and all entities follow the language of Home Assistant. English and German are included.
 
-| Aktion | Zweck |
+## Actions
+
+| Action | What it does |
 | --- | --- |
-| `mannito.open_valve` | Ein Ventil 1–60 Sekunden öffnen. Danach schließt es von selbst. |
-| `mannito.run_valves` | Alle Ventile eines Grow-Bereichs nacheinander öffnen: Sekunden (Durchfluss messen) oder ml pro Topf (Test-Shot). Jedes Ventil höchstens 60 Sekunden. |
-| `mannito.grow_cycle_action` | Phase bestätigen, nächste Phase starten, Phase verschieben, Licht-an-Zeit setzen, CO₂ an oder aus |
-| `mannito.record_measurement` | Messung einer Pflanze eintragen: Höhe (cm), Stammdicke, Blattgröße, Gewicht, Optik, Farbe |
-| `mannito.record_note` | Beobachtung zu einer Pflanze eintragen, wahlweise als offenes Problem |
-| `mannito.tank_entry` | Tankbuch: frisch angemischt, nachgefüllt, entnommen, Füllstand geprüft (Liter) |
-| `mannito.tank_reading` | EC, pH oder Temperatur im Tank eintragen |
+| `mannito.open_valve` | Opens one valve for 1 to 60 seconds. It closes on its own. |
+| `mannito.run_valves` | Opens all valves of a grow area one after another, either for a number of seconds (to measure the flow) or for an amount in ml per pot (test shot). Each valve opens for 60 seconds at most. |
+| `mannito.grow_cycle_action` | Confirms a phase, starts the next phase, postpones it, sets the lights-on time, or turns CO₂ dosing on or off. |
+| `mannito.record_measurement` | Records a measurement of a plant: height (cm), stem thickness, leaf size, weight, look, color. |
+| `mannito.record_note` | Records an observation on a plant, optionally as an open problem. |
+| `mannito.tank_entry` | Logs a tank event: mixed fresh, topped up, drawn off, level checked (liters). |
+| `mannito.tank_reading` | Records EC, pH or temperature measured in the tank. |
 
-Messung und Beobachtung nehmen eine Pflanze. Hat ein Grow-Bereich nur eine Pflanzung, geht auch der Grow-Bereich, dann gilt der
-Eintrag für alle seine Pflanzen. Einträge brauchen das Recht **Steuern**.
+Measurements and observations take a plant. A grow area with a single planting works too; the entry then applies to all
+of its plants. Records need the Control right.
 
-### Beispiele
+### Examples
 
-Benachrichtigung bei Notbetrieb:
+The entity IDs below assume a board named `Tent` with a grow area named `Flower`. Replace them with yours.
+
+Get a notification when the grow area goes into emergency mode:
 
 ```yaml
 automation:
-  - alias: "Zelt im Notbetrieb"
+  - alias: "Tent in emergency mode"
     triggers:
       - trigger: state
-        entity_id: binary_sensor.green_poison_notbetrieb
+        entity_id: binary_sensor.tent_flower_emergency_mode
         to: "on"
     actions:
-      - action: notify.mobile_app_handy
+      - action: notify.mobile_app_phone
         data:
-          message: "Das Zelt läuft im Notbetrieb – bitte nachsehen."
+          message: "The tent is in emergency mode. Please check it."
 ```
 
-Höhe jeden Sonntag per Benachrichtigung abfragen und eintragen lassen (Beispiel mit festem Wert):
+Get a notification when the tank runs low:
+
+```yaml
+automation:
+  - alias: "Refill the tank"
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.tent_flower_tank_volume
+        below: 2
+    actions:
+      - action: notify.mobile_app_phone
+        data:
+          message: "Only {{ states('sensor.tent_flower_tank_volume') }} l left in the tank."
+```
+
+Record a plant height:
 
 ```yaml
 action: mannito.record_measurement
 data:
-  target: <Geräte-ID der Pflanze>
+  target: <device ID of the plant>
   measurement: height
   value: 42
 ```
 
-Tank fast leer:
+## How fresh the data is
 
-```yaml
-automation:
-  - alias: "Tank nachfüllen"
-    triggers:
-      - trigger: numeric_state
-        entity_id: sensor.green_poison_tankinhalt
-        below: 2
-    actions:
-      - action: notify.mobile_app_handy
-        data:
-          message: "Im Tank sind nur noch {{ states('sensor.green_poison_tankinhalt') }} l."
-```
+Home Assistant polls the cloud every 30 seconds, right after you change a setting, and a few seconds after a switch
+command once the board has confirmed it. The board reports its readings to the cloud about once a minute, so a value can
+be up to 90 seconds old.
 
-## Wie die Daten kommen
+## Limits
 
-Home Assistant fragt die Cloud alle **30 Sekunden** ab, nach einer Einstellung sofort und nach einem Schaltbefehl nach wenigen
-Sekunden, sobald die Platine ihn bestätigt hat. Die Platine meldet ihre Werte etwa einmal pro
-Minute an die Cloud. Ein Wert kann also bis zu anderthalb Minuten alt sein.
+- A manual command takes the output out of automatic control until you press **... automatic**. The cloud behaves the
+  same way.
+- Valves opened from Home Assistant close after 60 seconds at most, so a faulty automation cannot flood the tent.
+- Bus modules such as the VPD module get no firmware from Home Assistant. Update them in the cloud or over USB.
+- A grow cycle cannot be ended from Home Assistant. End it on the page of the grow area in the cloud.
+- During the protected night of a flowering grow area the board refuses to turn the lights on.
+- Without internet the board keeps working, but Home Assistant no longer sees it.
 
-## Grenzen
+## Troubleshooting
 
-- Ein Befehl von Hand nimmt den Ausgang aus der Automatik, bis du **„… Automatik“** drückst. Das ist dasselbe Verhalten wie in der
-  Cloud.
-- Ventile öffnen aus Home Assistant **höchstens 60 Sekunden**. So kann eine fehlerhafte Automation das Zelt nicht fluten.
-- Bus-Module (zum Beispiel das VPD-Modul) bekommen aus Home Assistant **keine** Firmware. Das geht nur über die Cloud oder per USB.
-- Ein Grow-Zyklus lässt sich aus Home Assistant nicht beenden. Das geht nur auf der Seite des Grow-Bereichs.
-- Lichter eines blühenden Grow-Bereichs lehnt die Platine in der geschützten Nacht ab.
-- Ohne Internet bleibt die Platine handlungsfähig, Home Assistant sieht dann aber nichts mehr.
-
-## Fehlersuche
-
-| Meldung | Ursache und Abhilfe |
+| Message | Cause and fix |
 | --- | --- |
-| „Der Token ist unbekannt, widerrufen oder abgelaufen“ | In der Cloud einen neuen Token erstellen und über die Reparatur-Meldung eintragen. |
-| „Dem API-Token fehlt das Recht dafür“ | Einen Token mit dem Recht **Steuern** oder **Konfigurieren** erstellen und über „Neu konfigurieren“ eintragen. |
-| „Die Mannito-Cloud hat abgelehnt: …“ | Die Cloud nennt den Grund, zum Beispiel Platine offline oder Ventil länger als 60 s. |
-| „Zu viele Anfragen“ in den Protokollen | Ein Token darf 120 Anfragen pro Minute stellen. Mehrere Home-Assistant-Installationen mit demselben Token teilen sich das; gib jeder ihren eigenen Token. |
-| Ein Sensor der Platine zeigt „Unbekannt“ | Sein letzter Wert ist älter als 15 Minuten: Sonde abgesteckt oder Bus-Modul offline. |
-| Alle Entitäten nicht verfügbar | Platine offline oder Cloud nicht erreichbar. Den Online-Status der Platine prüfen. |
+| The token is unknown, revoked or expired. | Create a new token in the cloud and enter it through the repair notice. |
+| The API token does not have the right for this. | Create a token with the Control or Configure right and enter it with **Reconfigure**. |
+| The Mannito cloud rejected the request: ... | The cloud gives the reason, for example that the board is offline or a valve time is over 60 s. |
+| `rate limited, retry in ... s` in the log | A token may make 120 requests per minute. Installations that share a token share that limit, so give each one its own token. |
+| A board sensor shows Unknown | Its last reading is older than 15 minutes. The probe is unplugged or the bus module is offline. |
+| All entities are unavailable | The board is offline or the cloud cannot be reached. Check the online status of the board. |
 
-Für Fehlerberichte bitte die **Diagnose** des Eintrags herunterladen. Sie enthält keinen Token.
+When you report a problem, please attach the **diagnostics** of the entry. They do not contain the token.
 
-## Entfernen
+## Remove
 
-**Einstellungen → Geräte & Dienste → Mannito → ⋮ → Löschen.** Dabei passiert von selbst:
+Go to **Settings > Devices & services > Mannito**, open the menu of the entry and select **Delete**. The integration
+then:
 
-- Geräte und Entitäten der Platine verschwinden aus Home Assistant.
-- Die Integration widerruft ihren Token in der Cloud; unter **„API-Zugänge“** steht er danach als widerrufen. War die Cloud
-  gerade nicht erreichbar, steht ein Hinweis im Protokoll. Dann den Token dort von Hand widerrufen.
-- Nach der letzten Platine lädt Home Assistant die Mannito-Karte nicht mehr. Dashboards, auf denen sie noch liegt, zeigen dort
-  einen Fehler, bis du die Karte aus dem Dashboard nimmst.
+- removes the devices and entities of the board,
+- revokes its token in the cloud. If the cloud cannot be reached, the log says so; revoke the token in the **API-Zugänge**
+  card yourself,
+- stops loading the Mannito card once the last board is gone. Dashboards that still hold the card show an error there
+  until you remove it.
 
-Bei manueller Installation zum Schluss den Ordner `custom_components/mannito` löschen und Home Assistant neu starten; über HACS
-die Integration dort entfernen.
+Finally, remove the integration in HACS, or for a manual install delete `custom_components/mannito`, and restart Home
+Assistant. To add the board again later, create a new token; the old one is revoked.
 
-Willst du die Platine wieder hinzufügen, erstelle in der Cloud einen neuen Token: der alte ist widerrufen.
+## Development
 
-## Entwicklung
+Home Assistant does not run on Windows, so the tests run in a Linux container:
 
 ```bash
-# Tests in Linux (Home Assistant läuft nicht unter Windows)
-docker run --rm -v "$PWD:/src" -w /src python:3.14-slim sh -c \
-  "pip install -q uv && uv pip install --system -q -r requirements_test.txt && pytest"
+sh script/test.sh                 # all tests in Docker
+sh script/test.sh tests/test_card.py
 ```
 
-Die Texte liegen in `script/translations.py`. Danach `python script/translations.py custom_components/mannito` ausführen; das
-erzeugt `strings.json`, `translations/en.json` und `translations/de.json`.
+All texts live in `script/translations.py`. After changing them, run
+`python script/translations.py custom_components/mannito` to write `strings.json` and the translations.
+
+Every push runs hassfest, the HACS checks and the tests. A release is a tag `vX.Y.Z` that matches `version` in
+`manifest.json`.

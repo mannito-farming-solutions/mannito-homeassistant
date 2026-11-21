@@ -1,6 +1,6 @@
 {
   "board": {
-    "id": "c0ddf638-1007-4162-a038-e7753a4b75c1",
+    "id": "b0a4d000-0000-4000-8000-000000000001",
     "name": "Zelt",
     "online": true,
     "firmware": "2.14.2",
@@ -10,7 +10,7 @@
     "syncProblems": 0
   },
   "access": {
-    "tokenId": "6b0c1a52-2f4e-4c55-9d43-2f5a1e0b7a11",
+    "tokenId": "66666666-0000-4000-8000-000000000001",
     "tokenName": "Home Assistant",
     "canControl": true,
     "canConfigure": true,
@@ -120,7 +120,7 @@
   ],
   "areas": [
     {
-      "id": "dd3884a0-83f0-4e98-8437-20744b70f645",
+      "id": "ee000000-0000-4000-8000-000000000001",
       "name": "Green Poison",
       "place": 1,
       "enabled": true,
@@ -252,7 +252,7 @@
         "problems": []
       },
       "tank": {
-        "id": "01085855-eea0-4f26-a791-ae7bbd75c772",
+        "id": "77777777-0000-4000-8000-000000000001",
         "name": "Tank Zelt",
         "liters": 8.2,
         "capacityLiters": 10.0,

@@ -3,14 +3,14 @@
     "step": {
       "user": {
         "title": "Connect a Mannito board",
-        "description": "Create an API token on the page of your board in the Mannito cloud (card \"API-Zugänge\"). A token belongs to exactly one board.",
+        "description": "In the Mannito cloud, open your board and create an API token in the \"API-Zugänge\" (API access) card. Each token works for one board only.",
         "data": {
           "url": "Cloud address",
           "api_token": "API token"
         },
         "data_description": {
           "url": "Address of the Mannito cloud. Keep the suggested address unless you run a cloud of your own.",
-          "api_token": "The token starting with mnt_. Its rights (read, control, configure) decide which entities appear."
+          "api_token": "Starts with mnt_. Its rights (Read, Control, Configure) decide which entities and controls you get."
         }
       },
       "reauth_confirm": {
@@ -20,7 +20,7 @@
           "api_token": "API token"
         },
         "data_description": {
-          "api_token": "The token starting with mnt_. Its rights (read, control, configure) decide which entities appear."
+          "api_token": "Starts with mnt_. Its rights (Read, Control, Configure) decide which entities and controls you get."
         }
       },
       "reconfigure": {
@@ -32,7 +32,7 @@
         },
         "data_description": {
           "url": "Address of the Mannito cloud. Keep the suggested address unless you run a cloud of your own.",
-          "api_token": "The token starting with mnt_. Its rights (read, control, configure) decide which entities appear."
+          "api_token": "Starts with mnt_. Its rights (Read, Control, Configure) decide which entities and controls you get."
         }
       }
     },
@@ -44,7 +44,7 @@
     "abort": {
       "already_configured": "This board is already set up.",
       "reauth_successful": "The new token works.",
-      "reconfigure_successful": "The settings were changed.",
+      "reconfigure_successful": "Settings updated.",
       "wrong_board": "The token belongs to another board."
     }
   },
@@ -146,7 +146,7 @@
         "name": "Light intensity"
       },
       "co2_day": {
-        "name": "CO₂ with light on"
+        "name": "CO₂ while lights are on"
       },
       "circulation": {
         "name": "Circulation"
@@ -309,10 +309,10 @@
       "message": "The Mannito cloud could not be read: {error}"
     },
     "missing_right": {
-      "message": "The API token lacks the right for this. Create a token with the right to control or configure."
+      "message": "The API token does not have the right for this. Create a token with the Control or Configure right."
     },
     "command_failed": {
-      "message": "The Mannito cloud refused: {error}"
+      "message": "The Mannito cloud rejected the request: {error}"
     },
     "not_an_area": {
       "message": "Choose a grow area of a Mannito board."
@@ -330,10 +330,10 @@
       "message": "Choose whether CO₂ is dosed."
     },
     "plant_gone": {
-      "message": "The plant no longer stands in a grow area of the board (harvested or moved)."
+      "message": "This plant is no longer in a grow area of the board. It was harvested or removed."
     },
     "choose_plant": {
-      "message": "This grow area has several plantings or none: choose a plant."
+      "message": "This grow area has more than one planting, or none. Choose a plant instead."
     },
     "not_a_plant": {
       "message": "Choose a plant or a grow area of a Mannito board."
@@ -347,7 +347,7 @@
         "leaf_size": "Leaf size",
         "plant_weight": "Plant weight (g)",
         "optic": "Look (1-10)",
-        "color": "Colour (1-10)"
+        "color": "Color (1-10)"
       }
     },
     "condition": {
@@ -360,10 +360,10 @@
     },
     "tank_kind": {
       "options": {
-        "fresh": "Mixed fresh (holds exactly the litres)",
-        "top_up": "Topped up (litres added)",
-        "withdrawal": "Taken out (litres)",
-        "level_check": "Level checked (litres in it)"
+        "fresh": "Mixed fresh (liters in the tank)",
+        "top_up": "Topped up (liters added)",
+        "withdrawal": "Drawn off (liters removed)",
+        "level_check": "Level checked (liters in the tank)"
       }
     },
     "grow_cycle_action": {
@@ -372,14 +372,14 @@
         "next_phase_now": "Start next phase now",
         "postpone": "Postpone next phase",
         "set_lights_on": "Set lights-on time",
-        "set_co2": "Dose CO₂ or not"
+        "set_co2": "Turn CO₂ dosing on or off"
       }
     }
   },
   "services": {
     "open_valve": {
       "name": "Open valve",
-      "description": "Opens a valve for a few seconds; it closes on its own. At most 60 seconds.",
+      "description": "Opens a valve for up to 60 seconds. It closes on its own.",
       "fields": {
         "duration": {
           "name": "Duration",
@@ -389,7 +389,7 @@
     },
     "run_valves": {
       "name": "Run valves of a grow area",
-      "description": "Opens the valves of a grow area one after another, the pump runs its lead time first. Either seconds (flow measurement) or ml per pot (test shot); each valve at most 60 seconds.",
+      "description": "Opens the valves of a grow area one after another, after the pump has run its lead time. Give seconds to measure the flow, or ml per pot for a test shot. Each valve opens for 60 seconds at most.",
       "fields": {
         "area": {
           "name": "Grow area",
@@ -407,7 +407,7 @@
     },
     "record_measurement": {
       "name": "Record measurement",
-      "description": "Records a measurement of a plant, e.g. its height. For a grow area with a single planting it applies to all its plants.",
+      "description": "Records a measurement of a plant, such as its height. Pick a grow area with a single planting to record it for all of its plants.",
       "fields": {
         "target": {
           "name": "Plant",
@@ -429,7 +429,7 @@
     },
     "record_note": {
       "name": "Record observation",
-      "description": "Records what was seen at a plant; as a problem it stays open until it is resolved in the cloud.",
+      "description": "Records an observation on a plant. Marked as a problem, it stays open until you resolve it in the Mannito cloud.",
       "fields": {
         "target": {
           "name": "Plant",
@@ -451,19 +451,19 @@
     },
     "tank_entry": {
       "name": "Tank entry",
-      "description": "Enters what happened to the tank of a grow area: mixed fresh, topped up, taken out or level checked. The cloud works out the level from it.",
+      "description": "Logs a tank event for a grow area: mixed fresh, topped up, drawn off or level checked. The cloud calculates the tank level from these entries.",
       "fields": {
         "area": {
           "name": "Grow area",
-          "description": "The grow area whose tank is meant."
+          "description": "The grow area that draws from the tank."
         },
         "kind": {
           "name": "What happened",
-          "description": "Mixed fresh, topped up, taken out or level checked."
+          "description": "Mixed fresh, topped up, drawn off or level checked."
         },
         "liters": {
-          "name": "Litres",
-          "description": "Litres (see what happened)."
+          "name": "Liters",
+          "description": "Liters, as named in the choice above."
         },
         "note": {
           "name": "Note",
@@ -477,7 +477,7 @@
       "fields": {
         "area": {
           "name": "Grow area",
-          "description": "The grow area whose tank is meant."
+          "description": "The grow area that draws from the tank."
         },
         "ec": {
           "name": "EC",
@@ -495,7 +495,7 @@
     },
     "grow_cycle_action": {
       "name": "Grow cycle action",
-      "description": "Steers the running grow cycle of a grow area.",
+      "description": "Changes the running grow cycle of a grow area.",
       "fields": {
         "area": {
           "name": "Grow area",
@@ -515,7 +515,7 @@
         },
         "use_co2": {
           "name": "Dose CO₂",
-          "description": "Whether CO₂ is dosed."
+          "description": "On to dose CO₂, off to stop."
         }
       }
     }

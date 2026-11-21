@@ -15,6 +15,8 @@ const CARD_VERSION = "0.3.0";
 const TEXTS = {
   de: {
     choose: "Grow-Bereich in den Karteneinstellungen wählen.",
+    formDevice: "Grow-Bereich",
+    formShowAll: "Auch Ausgänge der Platine, die dem Bereich nicht zugeordnet sind",
     loading: "Lädt …",
     overview: "Übersicht",
     devices: "Geräte",
@@ -38,7 +40,7 @@ const TEXTS = {
     fieldCapacity: "Feldkapazität",
     trigger: "P2-Auslöser",
     emergencyLine: "Notfall",
-    emergencyMode: "Notbetrieb – die Platine regelt mit voller Leistung gegen.",
+    emergencyMode: "Notbetrieb: Die Platine regelt mit voller Leistung gegen.",
     shots: "Shots heute",
     water: "ml / Topf heute",
     dryback: "Dryback",
@@ -133,6 +135,8 @@ const TEXTS = {
   },
   en: {
     choose: "Choose a grow area in the card settings.",
+    formDevice: "Grow area",
+    formShowAll: "Also show board outputs not assigned to this area",
     loading: "Loading …",
     overview: "Overview",
     devices: "Devices",
@@ -156,7 +160,7 @@ const TEXTS = {
     fieldCapacity: "Field capacity",
     trigger: "P2 trigger",
     emergencyLine: "Emergency",
-    emergencyMode: "Emergency mode – the board counteracts at full power.",
+    emergencyMode: "Emergency mode: the board is correcting at full power.",
     shots: "Shots today",
     water: "ml / pot today",
     dryback: "Dryback",
@@ -175,7 +179,7 @@ const TEXTS = {
     opened: "open",
     closed: "closed",
     notAssigned: "Other outputs of the board",
-    noDevices: "No devices (the token may not control).",
+    noDevices: "No devices. The API token has no Control right.",
     control: "Control",
     climateControl: "Climate control",
     irrigationMode: "Irrigation",
@@ -186,16 +190,16 @@ const TEXTS = {
     lightsOn: "Lights on",
     set: "Set",
     nextPhase: "Start next phase",
-    nextPhaseConfirm: "Start the next phase now? The schedules of the area change at once.",
+    nextPhaseConfirm: "Start the next phase now? The schedules of this area change right away.",
     confirmPhase: "Confirm phase",
-    confirmPhaseConfirm: "Confirm the running phase (harvest or drying) as done?",
+    confirmPhaseConfirm: "Mark the current phase (harvest or drying) as done?",
     postpone: "Postpone",
     days: "days",
     firmware: "Firmware",
     install: "Install",
-    installConfirm: "Install firmware {v}? The board restarts and does not regulate for a few minutes.",
+    installConfirm: "Install firmware {v}? The board restarts and stops regulating for a few minutes.",
     upToDate: "up to date",
-    noConfigure: "Settings need a token with the right to configure.",
+    noConfigure: "Changing settings needs an API token with the Configure right.",
     status: { ok: "OK", attention: "Attention", problem: "Problem", neutral: "Paused", nodata: "No data" },
     plants: "Plants",
     age: "Day {n}",
@@ -210,16 +214,16 @@ const TEXTS = {
     saved: "Saved.",
     openProblems: "{n} open problems",
     openProblem: "1 open problem",
-    noPlants: "No plants stand in this area.",
-    liters: "Litres",
+    noPlants: "No plants in this area.",
+    liters: "Liters",
     topUp: "Topped up",
     fresh: "Mixed fresh",
     levelCheck: "Level",
-    tankConfirm: "Enter {kind}: {l} l?",
-    targets: "Targets of the phase",
-    targetsHint: "Applies to the running phase; the schedules follow at once.",
+    tankConfirm: "Log {kind}: {l} l?",
+    targets: "Phase targets",
+    targetsHint: "Applies to the current phase. The schedules update right away.",
     fieldCapacityNow: "Measure field capacity now",
-    fieldCapacityConfirm: "Store the current probe reading as field capacity? (pot soaked and drained for 30-60 min)",
+    fieldCapacityConfirm: "Save the current probe reading as field capacity? Do this once the pot is soaked and has drained for 30-60 min.",
     p1: "P1 · Ramp",
     p2: "P2 · Maintain",
     p3: "P3 · Night",
@@ -245,7 +249,7 @@ const TEXTS = {
       day_humidity: "Day humidity",
       night_humidity: "Night humidity",
       light_intensity: "Light intensity",
-      co2_day: "CO₂ with light",
+      co2_day: "CO₂ with lights on",
       circulation: "Circulation",
     },
   },
@@ -288,8 +292,10 @@ class MannitoCard extends HTMLElement {
         { name: "device", required: true, selector: { device: { filter: { integration: "mannito" } } } },
         { name: "show_all_devices", selector: { boolean: {} } },
       ],
-      computeLabel: (schema) =>
-        ({ device: "Grow-Bereich / grow area", show_all_devices: "Alle Ausgänge der Platine / all outputs of the board" })[schema.name],
+      computeLabel: (schema) => {
+        const t = MannitoCard.texts(document.querySelector("home-assistant")?.hass);
+        return { device: t.formDevice, show_all_devices: t.formShowAll }[schema.name];
+      },
     };
   }
 
@@ -340,9 +346,13 @@ class MannitoCard extends HTMLElement {
     return { columns: 12, min_columns: 6, rows: "auto" };
   }
 
-  get _t() {
-    const lang = (this._hass?.locale?.language || this._hass?.language || "en").slice(0, 2);
+  static texts(hass) {
+    const lang = (hass?.locale?.language || hass?.language || "en").slice(0, 2);
     return TEXTS[lang] || TEXTS.en;
+  }
+
+  get _t() {
+    return MannitoCard.texts(this._hass);
   }
 
   async _load() {
@@ -393,13 +403,13 @@ class MannitoCard extends HTMLElement {
     const last = Math.max(...spans.map((s) => s.end.getTime()));
     const now = Date.now();
     const pct = (ms) => Math.max(0, Math.min(100, ((ms - first) / (last - first)) * 100));
-    const fmt = new Intl.DateTimeFormat(this._hass?.locale?.language || "de", { day: "2-digit", month: "2-digit" });
+    const fmt = new Intl.DateTimeFormat(this._hass?.locale?.language || this._hass?.language || "en", { day: "2-digit", month: "2-digit" });
     el.hidden = false;
     el.innerHTML = `<div class="tl-bar">${spans
       .map((s) => {
         const state = s.end.getTime() <= now ? "done" : s.start.getTime() <= now ? "current" : "planned";
         return `<div class="tl-seg ${state}" style="left:${pct(s.start.getTime())}%;width:${pct(s.end.getTime()) - pct(s.start.getTime())}%"
-                  title="${esc(s.name)} · ${fmt.format(s.start)} – ${fmt.format(s.end)}"><span>${esc(s.name)}</span></div>`;
+                  title="${esc(s.name)} · ${fmt.format(s.start)} - ${fmt.format(s.end)}"><span>${esc(s.name)}</span></div>`;
       })
       .join("")}<div class="tl-now" style="left:${pct(now)}%"></div></div>`;
   }
@@ -429,7 +439,7 @@ class MannitoCard extends HTMLElement {
 
   _fmtNumber(value, digits) {
     if (value === null || value === undefined) return "–";
-    return new Intl.NumberFormat(this._hass?.locale?.language || "de", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+    return new Intl.NumberFormat(this._hass?.locale?.language || this._hass?.language || "en", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
   }
 
   _text(template, values) {
@@ -457,7 +467,7 @@ class MannitoCard extends HTMLElement {
     if (!iso || BAD.has(iso)) return null;
     const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
     if (!Number.isFinite(seconds)) return null;
-    const rtf = new Intl.RelativeTimeFormat(this._hass?.locale?.language || "de", { numeric: "auto", style: "short" });
+    const rtf = new Intl.RelativeTimeFormat(this._hass?.locale?.language || this._hass?.language || "en", { numeric: "auto", style: "short" });
     if (Math.abs(seconds) < 3600) return rtf.format(-Math.round(seconds / 60), "minute");
     if (Math.abs(seconds) < 86400) return rtf.format(-Math.round(seconds / 3600), "hour");
     return rtf.format(-Math.round(seconds / 86400), "day");
@@ -1155,8 +1165,8 @@ if (!customElements.get("mannito-card")) {
   window.customCards = window.customCards || [];
   window.customCards.push({
     type: "mannito-card",
-    name: "Mannito Grow-Bereich",
-    description: "Klima, Bewässerung, Geräte und Einstellungen eines Grow-Bereichs einer Mannito-Platine.",
+    name: "Mannito grow area",
+    description: "Climate, irrigation, plants, devices and settings of one grow area on a Mannito board.",
     preview: false,
     documentationURL: "https://github.com/mannito-farming-solutions/mannito-homeassistant",
   });

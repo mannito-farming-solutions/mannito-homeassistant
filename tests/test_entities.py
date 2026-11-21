@@ -181,7 +181,7 @@ async def test_area_actions(
             DOMAIN, "grow_cycle_action", {"area": area.id, "action": "postpone"}, blocking=True
         )
     board = devices.async_get_device_by_identifier(
-        (DOMAIN, "c0ddf638-1007-4162-a038-e7753a4b75c1"), mock_config_entry.entry_id
+        (DOMAIN, "b0a4d000-0000-4000-8000-000000000001"), mock_config_entry.entry_id
     )
     assert board is not None
     with pytest.raises(ServiceValidationError):

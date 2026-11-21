@@ -5,6 +5,11 @@
     "frontend",
     "http"
   ],
+  "categories": [
+    "garden_plants",
+    "climate",
+    "water"
+  ],
   "codeowners": [
     "@mannipulator"
   ],
